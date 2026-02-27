@@ -64,6 +64,17 @@ export default function ProductPage() {
     return min === Infinity ? 0 : min;
   }
 
+  async function handleDelete(id: string) {
+    if (confirm("Are you sure?")) {
+      try {
+        await fetch(`/api/product?id=${id}`, { method: "DELETE" });
+        setProducts(products.filter((p) => p.id !== id));
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 p-8 relative">
       <h1 className="text-2xl font-bold mb-6">Products</h1>
@@ -89,8 +100,22 @@ export default function ProductPage() {
               <div className="text-sm text-gray-600 mb-1">
                 First color: {p.variety[0]?.colorName || '-'}
               </div>
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-600 mb-3">
                 Starting price: ₹{startingPrice(p.variety)}
+              </div>
+              <div className="flex gap-2">
+                <Link
+                  href={`/editProduct?id=${p.id}`}
+                  className="flex-1 text-center bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-sm"
+                >
+                  Edit
+                </Link>
+                <button
+                  onClick={() => handleDelete(p.id)}
+                  className="flex-1 bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 text-sm"
+                >
+                  Delete
+                </button>
               </div>
             </div>
           ))}
