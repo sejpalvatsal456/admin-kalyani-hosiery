@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-
-export const dynamic = "force-dynamic";
+import { useRouter, useParams } from "next/navigation";
 
 // types matching schema
 interface Size {
@@ -49,8 +47,8 @@ function generateId() {
 
 export default function EditProductPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const productId = searchParams.get("id");
+  const params = useParams();
+  const productId = params.id as string;
 
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<ProductInput>({

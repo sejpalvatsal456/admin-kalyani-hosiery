@@ -105,7 +105,7 @@ export default function ProductPage() {
               </div>
               <div className="flex gap-2">
                 <Link
-                  href={`/editProduct?id=${p.id}`}
+                  href={`/editProduct/${p.id}`}
                   className="flex-1 text-center bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-sm"
                 >
                   Edit
