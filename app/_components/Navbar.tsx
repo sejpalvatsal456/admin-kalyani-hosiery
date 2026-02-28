@@ -11,7 +11,8 @@ export default function Navbar() {
     { label: 'Category', href: '/category' },
     { label: 'Subcategory', href: '/subcategory' },
     { label: 'Product', href: '/product' },
-    { label: 'Sale Popular Products', href: '/sale-popular-products' },
+    { label: 'Sale Products', href: '/sale-products' },
+    { label: 'Popular Products', href: '/popular-products' },
     { label: 'Reels/Banner', href: '/reels-banner' },
   ];
 

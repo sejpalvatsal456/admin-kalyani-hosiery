@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 type Brand = {
-  id: number;
+  id: string;
   name: string;
   logoUrl: string;
 };
@@ -14,27 +14,75 @@ export default function BrandPage() {
   const [name, setName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [brands, setBrands] = useState<Brand[]>([]);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  function handleAdd(e: React.FormEvent) {
+  async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
     if (editingId !== null) {
-      setBrands((prev) =>
-        prev.map((b) =>
-          b.id === editingId ? { ...b, name: name.trim(), logoUrl: logoUrl.trim() } : b
-        )
-      );
+      // send update request
+      const res = await fetch('/api/brand/', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editingId, name: name.trim(), logo: logoUrl.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setBrands((prev) =>
+          prev.map((b) =>
+            b.id === editingId ? { ...b, name: name.trim(), logoUrl: logoUrl.trim() } : b
+          )
+        );
+      } else {
+        alert('Failed to update brand');
+        console.error(data.msg);
+      }
       setEditingId(null);
     } else {
+      const res = await fetch('/api/brand/', {
+        method : "POST", 
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name, logo: logoUrl })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert("Error in creating brand");
+        console.log(data.msg);
+        return;
+      }
       setBrands((prev) => [
-        { id: prev.length ? prev[0].id + 1 : 1, name: name.trim(), logoUrl: logoUrl.trim() },
+        { id: data.brand._id, name: data.brand.name.trim(), logoUrl: data.brand.logo.trim() },
         ...prev,
       ]);
     }
     setName("");
     setLogoUrl("");
   }
+
+
+  // fetch existing brands when component mounts
+  useEffect(() => {
+    async function fetchBrands() {
+      try {
+        const res = await fetch('/api/brand');
+        const data = await res.json();
+        if (res.ok) {
+          setBrands(
+            data.brands.map((b: any) => ({
+              id: b._id,
+              name: b.name,
+              logoUrl: b.logo,
+            }))
+          );
+        } else {
+          console.error('Failed to load brands', data.msg);
+        }
+      } catch (err) {
+        console.error('Error fetching brands', err);
+      }
+    }
+    fetchBrands();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
