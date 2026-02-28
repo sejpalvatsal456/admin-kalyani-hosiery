@@ -36,10 +36,7 @@ interface ProductInput {
   desc: Desc[];
 }
 
-// static options for now
-const brands = ["BrandA", "BrandB", "BrandC"];
-const categories = ["Cat1", "Cat2", "Cat3"];
-const subcategories = ["Sub1", "Sub2", "Sub3"];
+// dynamic lists fetched from server
 
 function generateId() {
   return Math.random().toString(36).substr(2, 9);
@@ -51,11 +48,14 @@ export default function EditProductPage() {
   const productId = params.id as string;
 
   const [loading, setLoading] = useState(true);
+  const [brandsList, setBrandsList] = useState<{ id: string; name: string }[]>([]);
+  const [categoriesList, setCategoriesList] = useState<{ id: string; name: string }[]>([]);
+  const [subcategoriesList, setSubcategoriesList] = useState<{ id: string; name: string }[]>([]);
   const [form, setForm] = useState<ProductInput>({
-    brandId: brands[0],
+    brandId: "",
     productName: "",
-    categoryId: categories[0],
-    subcategoryId: subcategories[0],
+    categoryId: "",
+    subcategoryId: "",
     thumbnail: "",
     variety: [],
     desc: [],
@@ -81,6 +81,37 @@ export default function EditProductPage() {
     }
     loadProduct();
   }, [productId]);
+
+  // load brands and categories
+  useEffect(() => {
+    async function loadOptions() {
+      try {
+        const [bRes, cRes] = await Promise.all([fetch("/api/brand"), fetch("/api/category")]);
+        const bData = await bRes.json();
+        if (bRes.ok) setBrandsList(bData.brands.map((b: any) => ({ id: b._id, name: b.name })));
+        const cData = await cRes.json();
+        if (cRes.ok) setCategoriesList(cData.categories.map((c: any) => ({ id: c._id, name: c.name })));
+      } catch (err) {
+        console.error('Failed to load brands/categories', err);
+      }
+    }
+    loadOptions();
+  }, []);
+
+  // refetch subcategories when category changes
+  useEffect(() => {
+    async function loadSubs() {
+      if (!form.categoryId) return setSubcategoriesList([]);
+      try {
+        const res = await fetch(`/api/subcategory?categoryId=${form.categoryId}`);
+        const data = await res.json();
+        if (res.ok) setSubcategoriesList(data.subcategories.map((s: any) => ({ id: s._id, name: s.name })));
+      } catch (err) {
+        console.error('Failed to load subcategories', err);
+      }
+    }
+    loadSubs();
+  }, [form.categoryId]);
 
   const handleChange = (field: keyof ProductInput, value: any) => {
     setForm((f) => ({ ...f, [field]: value }));
@@ -204,10 +235,12 @@ export default function EditProductPage() {
               value={form.brandId}
               onChange={(e) => handleChange("brandId", e.target.value)}
               className="mt-1 block w-full border-gray-300 rounded p-2"
+              required
             >
-              {brands.map((b) => (
-                <option key={b} value={b}>
-                  {b}
+              <option value="">Select brand</option>
+              {brandsList.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
                 </option>
               ))}
             </select>
@@ -220,10 +253,12 @@ export default function EditProductPage() {
               value={form.categoryId}
               onChange={(e) => handleChange("categoryId", e.target.value)}
               className="mt-1 block w-full border-gray-300 rounded p-2"
+              required
             >
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              <option value="">Select category</option>
+              {categoriesList.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
               ))}
             </select>
@@ -236,10 +271,12 @@ export default function EditProductPage() {
               value={form.subcategoryId}
               onChange={(e) => handleChange("subcategoryId", e.target.value)}
               className="mt-1 block w-full border-gray-300 rounded p-2"
+              required
             >
-              {subcategories.map((s) => (
-                <option key={s} value={s}>
-                  {s}
+              <option value="">Select subcategory</option>
+              {subcategoriesList.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
                 </option>
               ))}
             </select>

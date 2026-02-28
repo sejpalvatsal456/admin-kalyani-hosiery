@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 // types matching schema
@@ -35,10 +35,8 @@ interface ProductInput {
   desc: Desc[];
 }
 
-// static options for now
-const brands = ["BrandA", "BrandB", "BrandC"];
-const categories = ["Cat1", "Cat2", "Cat3"];
-const subcategories = ["Sub1", "Sub2", "Sub3"];
+// dynamic options
+// will be fetched from APIs
 
 function generateId() {
   return Math.random().toString(36).substr(2, 9);
@@ -47,14 +45,18 @@ function generateId() {
 export default function AddProductPage() {
   const router = useRouter();
   const [form, setForm] = useState<ProductInput>({
-    brandId: brands[0],
+    brandId: "",
     productName: "",
-    categoryId: categories[0],
-    subcategoryId: subcategories[0],
+    categoryId: "",
+    subcategoryId: "",
     thumbnail: "",
     variety: [],
     desc: [],
   });
+
+  const [brandsList, setBrandsList] = useState<{ id: string; name: string }[]>([]);
+  const [categoriesList, setCategoriesList] = useState<{ id: string; name: string }[]>([]);
+  const [subcategoriesList, setSubcategoriesList] = useState<{ id: string; name: string }[]>([]);
 
   const handleChange = (field: keyof ProductInput, value: any) => {
     setForm((f) => ({ ...f, [field]: value }));
@@ -154,6 +156,41 @@ export default function AddProductPage() {
     router.push("/product");
   };
 
+  useEffect(() => {
+    async function loadOptions() {
+      try {
+        const [bRes, cRes] = await Promise.all([fetch("/api/brand"), fetch("/api/category")]);
+        const bData = await bRes.json();
+        if (bRes.ok) setBrandsList(bData.brands.map((b: any) => ({ id: b._id, name: b.name })));
+        const cData = await cRes.json();
+        if (cRes.ok) {
+          setCategoriesList(cData.categories.map((c: any) => ({ id: c._id, name: c.name })));
+          setForm((f) => ({ ...f, categoryId: cData.categories[0]?._id || "" }));
+        }
+      } catch (err) {
+        console.error('Failed to load options', err);
+      }
+    }
+    loadOptions();
+  }, []);
+
+  // refetch subcategories when category changes
+  useEffect(() => {
+    console.log(form.categoryId);
+    async function loadSubs() {
+      if (!form.categoryId) return setSubcategoriesList([]);
+      try {
+        const res = await fetch(`/api/subcategory?categoryId=${form.categoryId}`);
+        const data = await res.json();
+        console.log(data);
+        if (res.ok) setSubcategoriesList(data.subcategories.map((s: any) => ({ id: s._id, name: s.name })));
+      } catch (err) {
+        console.error('Failed to load subcategories', err);
+      }
+    }
+    loadSubs();
+  }, [form.categoryId]);
+
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <h1 className="text-2xl font-bold mb-6">Add Product</h1>
@@ -176,10 +213,12 @@ export default function AddProductPage() {
               value={form.brandId}
               onChange={(e) => handleChange("brandId", e.target.value)}
               className="mt-1 block w-full border-gray-300 rounded p-2"
+              required
             >
-              {brands.map((b) => (
-                <option key={b} value={b}>
-                  {b}
+              <option value="">Select brand</option>
+              {brandsList.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
                 </option>
               ))}
             </select>
@@ -192,10 +231,12 @@ export default function AddProductPage() {
               value={form.categoryId}
               onChange={(e) => handleChange("categoryId", e.target.value)}
               className="mt-1 block w-full border-gray-300 rounded p-2"
+              required
             >
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              <option value="">Select category</option>
+              {categoriesList.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
               ))}
             </select>
@@ -208,10 +249,12 @@ export default function AddProductPage() {
               value={form.subcategoryId}
               onChange={(e) => handleChange("subcategoryId", e.target.value)}
               className="mt-1 block w-full border-gray-300 rounded p-2"
+              required
             >
-              {subcategories.map((s) => (
-                <option key={s} value={s}>
-                  {s}
+              <option value="">Select subcategory</option>
+              {subcategoriesList.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
                 </option>
               ))}
             </select>

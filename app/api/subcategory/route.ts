@@ -6,7 +6,11 @@ import { NextRequest, NextResponse } from "next/server";
 export const GET = async (req: NextRequest) => {
   try {
     await connectDB();
-    const subs = await Subcategory.find({}).populate("categoryId");
+    const { searchParams } = new URL(req.url);
+    const categoryId = searchParams.get("categoryId");
+    const filter: any = {};
+    if (categoryId) filter.categoryId = categoryId;
+    const subs = await Subcategory.find(filter).populate("categoryId");
     return NextResponse.json({ subcategories: subs }, { status: 200 });
   } catch (error) {
     console.log(error);

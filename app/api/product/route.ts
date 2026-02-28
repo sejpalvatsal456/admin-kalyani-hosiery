@@ -1,59 +1,84 @@
+import { connectDB } from "@/lib/connectDB";
+import { Product } from "@/lib/models";
 import { NextRequest, NextResponse } from "next/server";
 
-interface Product {
-  id: string;
-  brandId: string;
-  productName: string;
-  categoryId: string;
-  subcategoryId: string;
-  thumbnail: string;
-  variety: any[];
-  desc: any[];
-}
-
-let products: Product[] = [];
-
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const id = searchParams.get("id");
-  if (id) {
-    const prod = products.find((p) => p.id === id);
-    return NextResponse.json(prod || null);
-  }
-  return NextResponse.json(products);
-}
-
-export async function POST(req: NextRequest) {
+// GET: list or single product (populated)
+export const GET = async (req: NextRequest) => {
   try {
-    const data = await req.json();
-    const id = Date.now().toString();
-    const item: Product = { id, ...data };
-    products = [item, ...products];
-    return NextResponse.json(item);
-  } catch (err) {
-    return NextResponse.error();
-  }
-}
-
-export async function PUT(req: NextRequest) {
-  try {
-    const data = await req.json();
-    const { id, ...updates } = data;
-    products = products.map((p) => (p.id === id ? { ...p, ...updates } : p));
-    return NextResponse.json({ id, ...updates });
-  } catch (err) {
-    return NextResponse.error();
-  }
-}
-
-export async function DELETE(req: NextRequest) {
-  try {
+    await connectDB();
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
-    if (!id) return NextResponse.error();
-    products = products.filter((p) => p.id !== id);
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    return NextResponse.error();
+    if (id) {
+      const prod = await Product.findById(id)
+        .populate("brandId")
+        .populate("categoryId")
+        .populate("subcategoryId");
+      return NextResponse.json(prod, { status: 200 });
+    }
+    const prods = await Product.find({})
+      .populate("brandId", "name")
+      .populate("categoryId", "name")
+      .populate("subcategoryId", "name");
+    return NextResponse.json(prods, { status: 200 });
+  } catch (error) {
+    console.log(error);
+    return NextResponse.json({ msg: "Internal Server Error", error }, { status: 500 });
   }
-}
+};
+
+// POST: create product
+export const POST = async (req: NextRequest) => {
+  try {
+    await connectDB();
+    const data = await req.json();
+    // basic validation
+    const { productName, brandId, categoryId, subcategoryId } = data;
+    if (!productName || !brandId || !categoryId || !subcategoryId) {
+      return NextResponse.json({ msg: "Missing required fields" }, { status: 400 });
+    }
+
+    const created = await Product.create(data);
+    return NextResponse.json(created, { status: 200 });
+  } catch (error) {
+    console.log(error);
+    return NextResponse.json({ msg: "Internal Server Error", error }, { status: 500 });
+  }
+};
+
+// PATCH: update product
+export const PATCH = async (req: NextRequest) => {
+  try {
+    await connectDB();
+    const body = await req.json();
+    const { id, ...updates } = body;
+    if (!id) return NextResponse.json({ msg: "id is required" }, { status: 400 });
+    const prod = await Product.findById(id);
+    if (!prod) return NextResponse.json({ msg: "Product not found" }, { status: 404 });
+    Object.assign(prod, updates);
+    await prod.save();
+    return NextResponse.json(prod, { status: 200 });
+  } catch (error) {
+    console.log(error);
+    return NextResponse.json({ msg: "Internal Server Error", error }, { status: 500 });
+  }
+};
+
+// DELETE: remove product (accept id query or body)
+export const DELETE = async (req: NextRequest) => {
+  try {
+    await connectDB();
+    const { searchParams } = new URL(req.url);
+    let id = searchParams.get("id");
+    if (!id) {
+      // try body
+      const body = await req.json().catch(() => null);
+      id = body?.id;
+    }
+    if (!id) return NextResponse.json({ msg: "id is required" }, { status: 400 });
+    await Product.deleteOne({ _id: id });
+    return NextResponse.json({ msg: "Deleted" }, { status: 200 });
+  } catch (error) {
+    console.log(error);
+    return NextResponse.json({ msg: "Internal Server Error", error }, { status: 500 });
+  }
+};

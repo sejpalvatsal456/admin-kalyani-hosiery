@@ -25,15 +25,17 @@ interface Desc {
 }
 
 interface Product {
-  id: string;
-  brandId: string;
+  _id: string;
+  brandId: { _id: string; name: string; logo: string };
   productName: string;
-  categoryId: string;
-  subcategoryId: string;
+  categoryId: { _id: string; name: string };
+  subcategoryId: { _id: string; categoryId: string;name: string; };
   thumbnail: string;
   variety: Variety[];
   desc: Desc[];
 }
+
+// FIXME: Solve the error here
 
 export default function ProductPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -44,6 +46,7 @@ export default function ProductPage() {
       try {
         const res = await fetch("/api/product");
         const data = await res.json();
+        // console.log(data);
         setProducts(data);
       } catch (err) {
         console.error(err);
@@ -53,6 +56,10 @@ export default function ProductPage() {
     }
     load();
   }, []);
+
+  useEffect(() => {
+    console.log(products);
+  }, [products]);
 
   function startingPrice(varieties: Variety[]): number {
     let min = Infinity;
@@ -68,7 +75,7 @@ export default function ProductPage() {
     if (confirm("Are you sure?")) {
       try {
         await fetch(`/api/product?id=${id}`, { method: "DELETE" });
-        setProducts(products.filter((p) => p.id !== id));
+        setProducts(products.filter((p) => p._id !== id));
       } catch (err) {
         console.error(err);
       }
@@ -85,17 +92,18 @@ export default function ProductPage() {
         <p className="text-gray-500">No products available.</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((p) => (
-            <div key={p.id} className="bg-white rounded shadow p-4">
+          {products.map((p) => {
+            return (
+            <div key={p._id} className="bg-white rounded shadow p-4">
               <img
                 src={p.thumbnail}
                 alt={p.productName}
                 className="w-full h-40 object-cover rounded mb-4"
               />
               <h2 className="text-lg font-semibold mb-2">{p.productName}</h2>
-              <div className="text-sm text-gray-600 mb-1">Brand: {p.brandId}</div>
+              <div className="text-sm text-gray-600 mb-1">Brand: {p.brandId.name}</div>
               <div className="text-sm text-gray-600 mb-1">
-                Category: {p.categoryId}
+                Category: {p.categoryId.name}
               </div>
               <div className="text-sm text-gray-600 mb-1">
                 First color: {p.variety[0]?.colorName || '-'}
@@ -105,20 +113,21 @@ export default function ProductPage() {
               </div>
               <div className="flex gap-2">
                 <Link
-                  href={`/editProduct/${p.id}`}
+                  href={`/editProduct/${p._id}`}
                   className="flex-1 text-center bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 text-sm"
                 >
                   Edit
                 </Link>
                 <button
-                  onClick={() => handleDelete(p.id)}
+                  onClick={() => handleDelete(p._id)}
                   className="flex-1 bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 text-sm"
                 >
                   Delete
                 </button>
               </div>
             </div>
-          ))}
+          )
+          })}
         </div>
       )}
 
