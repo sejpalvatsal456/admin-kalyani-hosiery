@@ -1,40 +1,107 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 type Subcategory = {
-  id: number;
+  id: string;
   name: string;
-  category: string;
+  categoryId: string;
+  categoryName: string;
 };
 
-const categories = ["Men", "Women", "Kids", "Sales"];
+type Category = { id: string; name: string };
 
 export default function SubcategoryPage() {
   const [name, setName] = useState("");
-  const [category, setCategory] = useState(categories[0]);
+  const [categoryId, setCategoryId] = useState<string>("");
   const [items, setItems] = useState<Subcategory[]>([]);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  function handleAdd(e: React.FormEvent) {
+  async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || !categoryId) return;
     if (editingId !== null) {
-      setItems((prev) =>
-        prev.map((it) =>
-          it.id === editingId ? { ...it, name: name.trim(), category } : it
-        )
-      );
+      const res = await fetch('/api/subcategory', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editingId, name: name.trim(), categoryId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setItems((prev) =>
+          prev.map((it) =>
+            it.id === editingId
+              ? { ...it, name: name.trim(), categoryId, categoryName: data.subcategory.categoryId.name }
+              : it
+          )
+        );
+      } else {
+        alert('Failed to update subcategory');
+        console.error(data.msg);
+      }
       setEditingId(null);
     } else {
-      setItems((prev) => [
-        { id: prev.length ? prev[0].id + 1 : 1, name: name.trim(), category },
-        ...prev,
-      ]);
+      const res = await fetch('/api/subcategory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), categoryId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setItems((prev) => [
+          {
+            id: data.subcategory._id,
+            name: data.subcategory.name,
+            categoryId,
+            categoryName: data.subcategory.categoryId.name,
+          },
+          ...prev,
+        ]);
+      } else {
+        alert('Failed to create subcategory');
+        console.error(data.msg);
+      }
     }
     setName("");
-    setCategory(categories[0]);
+    setCategoryId(categories[0]?.id || "");
   }
+
+  // load categories and subcategories
+  useEffect(() => {
+    async function load() {
+      try {
+        const [catRes, subRes] = await Promise.all([
+          fetch('/api/category'),
+          fetch('/api/subcategory'),
+        ]);
+        const catData = await catRes.json();
+        if (catRes.ok) {
+          const catsArray: any[] = Array.isArray(catData.categories)
+            ? catData.categories.filter((c: any) => c != null)
+            : [];
+          setCategories(
+            catsArray.map((c: any) => ({ id: c._id, name: c.name }))
+          );
+          setCategoryId(catsArray[0]?._id || "");
+        }
+        const subData = await subRes.json();
+        if (subRes.ok) {
+          setItems(
+            subData.subcategories.map((s: any) => ({
+              id: s._id,
+              name: s.name,
+              categoryId: s.categoryId._id,
+              categoryName: s.categoryId.name,
+            }))
+          );
+        }
+      } catch (err) {
+        console.error('Error loading data', err);
+      }
+    }
+    load();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -59,13 +126,14 @@ export default function SubcategoryPage() {
                 Category
               </label>
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
                 className="mt-1 block w-full border-gray-300 rounded p-2"
+                required
               >
                 {categories.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+                  <option key={c.id} value={c.id}>
+                    {c.name}
                   </option>
                 ))}
               </select>
@@ -123,26 +191,37 @@ export default function SubcategoryPage() {
                         {it.name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {it.category}
+                        {it.categoryName}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <button
                           onClick={() => {
                             setEditingId(it.id);
                             setName(it.name);
-                            setCategory(it.category);
+                            setCategoryId(it.categoryId);
                           }}
                           className="text-blue-600 hover:underline mr-2"
                         >
                           Edit
                         </button>
                         <button
-                          onClick={() => {
-                            setItems((prev) => prev.filter((x) => x.id !== it.id));
-                            if (editingId === it.id) {
-                              setEditingId(null);
-                              setName("");
-                              setCategory(categories[0]);
+                          onClick={async () => {
+                            const res = await fetch('/api/subcategory', {
+                              method: 'DELETE',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ id: it.id }),
+                            });
+                            if (res.ok) {
+                              setItems((prev) => prev.filter((x) => x.id !== it.id));
+                              if (editingId === it.id) {
+                                setEditingId(null);
+                                setName("");
+                                setCategoryId(categories[0]?.id || "");
+                              }
+                            } else {
+                              const d = await res.json();
+                              alert('Failed to delete subcategory');
+                              console.error(d.msg);
                             }
                           }}
                           className="text-red-600 hover:underline"
