@@ -1,6 +1,19 @@
 import { connectDB } from "@/lib/connectDB";
 import { Brand, Product } from "@/lib/models";
 import { NextRequest, NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
+
+async function requireAdmin(req: NextRequest) {
+  const token = req.cookies.get("token")?.value;
+  if (!token) return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET as string) as any;
+    if (payload.role !== "admin") return NextResponse.json({ msg: "Forbidden" }, { status: 403 });
+    return null;
+  } catch (err) {
+    return NextResponse.json({ msg: "Unauthorized" }, { status: 401 });
+  }
+}
 
 export const GET = async (req: NextRequest) => {
   try {
@@ -18,6 +31,8 @@ export const GET = async (req: NextRequest) => {
 
 export const PATCH = async (req: NextRequest) => {
   try {
+    const authErr = await requireAdmin(req);
+    if (authErr) return authErr;
     await connectDB();
     const { id, name, logo } = await req.json() as {
       id: string;
@@ -64,6 +79,8 @@ export const PATCH = async (req: NextRequest) => {
 
 export const DELETE = async (req: NextRequest) => {
   try {
+    const authErr = await requireAdmin(req);
+    if (authErr) return authErr;
     await connectDB();
     const { id } = await req.json() as { id: string };
     if (!id) {
@@ -92,6 +109,8 @@ export const DELETE = async (req: NextRequest) => {
 
 export const POST = async(req:NextRequest) => {
   try {
+    const authErr = await requireAdmin(req);
+    if (authErr) return authErr;
     await connectDB();
     const { name, logo } = await req.json() as { name: string, logo: string };
 

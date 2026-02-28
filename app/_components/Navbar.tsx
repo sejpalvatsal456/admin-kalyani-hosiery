@@ -31,6 +31,7 @@ export default function Navbar() {
             {item.label}
           </a>
         ))}
+        <a href="/api/auth/logout" className="block px-3 py-2 rounded hover:bg-gray-200 text-red-600">Logout</a>
       </nav>
     </aside>
   );
