@@ -1,10 +1,39 @@
-export default function Home() {
-  // Dummy data for the dashboard
+import { connectDB } from "@/lib/connectDB";
+import { Brand, Order, Product } from "@/lib/models";
+
+export default async function Home() {
+  let totalSales = 0;
+  let totalProducts = 0;
+  let totalBrands = 0;
+  let totalOrders = 0;
+
+  try {
+    await connectDB();
+
+    // Total Sales: sum of totalAmount from Orders with status "paid"
+    const salesResult = await Order.aggregate([
+      { $match: { status: "paid" } },
+      { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+    ]);
+    totalSales = salesResult[0]?.total || 0;
+
+    // Total Products: count of Product documents
+    totalProducts = await Product.countDocuments();
+
+    // Total Brands: count of Brand documents
+    totalBrands = await Brand.countDocuments();
+
+    // Total Orders: count of Order documents with status "paid"
+    totalOrders = await Order.countDocuments({ status: "paid" });
+  } catch (error) {
+    console.error("Error fetching dashboard stats:", error);
+  }
+
   const stats = [
-    { label: 'Total Sales', value: '$12,345' },
-    { label: 'Total Products', value: '567' },
-    { label: 'Total Brands', value: '42' },
-    { label: 'Total Orders', value: '1,234' },
+    { label: 'Total Sales', value: `₹${totalSales.toLocaleString()}` },
+    { label: 'Total Products', value: totalProducts.toString() },
+    { label: 'Total Brands', value: totalBrands.toString() },
+    { label: 'Total Orders', value: totalOrders.toString() },
   ];
 
   return (
