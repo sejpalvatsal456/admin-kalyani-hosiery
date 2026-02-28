@@ -148,6 +148,7 @@ export default function CategoryPage() {
                         </button>
                         <button
                           onClick={async () => {
+                            if (!confirm(`Delete category "${c.name}"? This will also remove its subcategories and products.`)) return;
                             // send delete
                             const res = await fetch('/api/category', {
                               method: 'DELETE',

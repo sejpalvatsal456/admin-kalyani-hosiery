@@ -206,6 +206,7 @@ export default function SubcategoryPage() {
                         </button>
                         <button
                           onClick={async () => {
+                            if (!confirm(`Delete subcategory "${it.name}"? This will also remove related products.`)) return;
                             const res = await fetch('/api/subcategory', {
                               method: 'DELETE',
                               headers: { 'Content-Type': 'application/json' },

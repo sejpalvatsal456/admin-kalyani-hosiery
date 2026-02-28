@@ -1,5 +1,5 @@
 import { connectDB } from "@/lib/connectDB";
-import { Brand } from "@/lib/models";
+import { Brand, Product } from "@/lib/models";
 import { NextRequest, NextResponse } from "next/server";
 
 export const GET = async (req: NextRequest) => {
@@ -75,6 +75,10 @@ export const DELETE = async (req: NextRequest) => {
       return NextResponse.json({ msg: "Brand not found" }, { status: 404 });
     }
 
+    // delete related products first (cascade)
+    await Product.deleteMany({ brandId: id });
+
+    // delete the brand
     await Brand.deleteOne({ _id: id });
     return NextResponse.json({ msg: "Deleted" }, { status: 200 });
   } catch (error) {

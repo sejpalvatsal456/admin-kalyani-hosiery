@@ -1,5 +1,5 @@
 import { connectDB } from "@/lib/connectDB";
-import { Subcategory } from "@/lib/models";
+import { Subcategory, Product } from "@/lib/models";
 import { NextRequest, NextResponse } from "next/server";
 
 // get all subcategories (populated with category name)
@@ -118,6 +118,8 @@ export const DELETE = async (req: NextRequest) => {
     if (!sub) {
       return NextResponse.json({ msg: "Subcategory not found" }, { status: 404 });
     }
+    // delete products that reference this subcategory
+    await Product.deleteMany({ subcategoryId: id });
     await Subcategory.deleteOne({ _id: id });
     return NextResponse.json({ msg: "Deleted" }, { status: 200 });
   } catch (error) {

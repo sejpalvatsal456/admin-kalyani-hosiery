@@ -189,6 +189,7 @@ export default function BrandPage() {
                         </button>
                         <button
                           onClick={async () => {
+                            if (!confirm(`Delete brand "${b.name}"? This will also remove all related products.`)) return;
                             const res = await fetch('/api/brand/', {
                               method: 'DELETE',
                               headers: { 'Content-Type': 'application/json' },
