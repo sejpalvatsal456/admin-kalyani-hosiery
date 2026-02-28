@@ -62,6 +62,30 @@ export const PATCH = async (req: NextRequest) => {
   }
 };
 
+export const DELETE = async (req: NextRequest) => {
+  try {
+    await connectDB();
+    const { id } = await req.json() as { id: string };
+    if (!id) {
+      return NextResponse.json({ msg: "id is required" }, { status: 500 });
+    }
+
+    const brand = await Brand.findById(id);
+    if (!brand) {
+      return NextResponse.json({ msg: "Brand not found" }, { status: 404 });
+    }
+
+    await Brand.deleteOne({ _id: id });
+    return NextResponse.json({ msg: "Deleted" }, { status: 200 });
+  } catch (error) {
+    console.log(error);
+    return NextResponse.json(
+      { msg: "Internal Server Error", error },
+      { status: 500 }
+    );
+  }
+};
+
 export const POST = async(req:NextRequest) => {
   try {
     await connectDB();

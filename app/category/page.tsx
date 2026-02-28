@@ -1,34 +1,76 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 type Category = {
-  id: number;
+  id: string;
   name: string;
 };
 
 export default function CategoryPage() {
   const [name, setName] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  function handleAdd(e: React.FormEvent) {
+  async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
     if (editingId !== null) {
-      // update existing
-      setCategories((prev) =>
-        prev.map((c) => (c.id === editingId ? { ...c, name: name.trim() } : c))
-      );
+      // send patch request
+      const res = await fetch('/api/category', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: editingId, name: name.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCategories((prev) =>
+          prev.map((c) => (c.id === editingId ? { ...c, name: name.trim() } : c))
+        );
+      } else {
+        alert('Failed to update category');
+        console.error(data.msg);
+      }
       setEditingId(null);
     } else {
-      setCategories((prev) => [
-        { id: prev.length ? prev[0].id + 1 : 1, name: name.trim() },
-        ...prev,
-      ]);
+      const res = await fetch('/api/category', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCategories((prev) => [
+          { id: data.category._id, name: data.category.name },
+          ...prev,
+        ]);
+      } else {
+        alert('Failed to create category');
+        console.error(data.msg);
+      }
     }
     setName("");
   }
+
+  // load categories from backend
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch('/api/category');
+        const data = await res.json();
+        if (res.ok) {
+          setCategories(
+            data.categories.map((c: any) => ({ id: c._id, name: c.name }))
+          );
+        } else {
+          console.error('Failed to fetch categories', data.msg);
+        }
+      } catch (err) {
+        console.error('Error fetching categories', err);
+      }
+    }
+    load();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
@@ -105,11 +147,23 @@ export default function CategoryPage() {
                           Edit
                         </button>
                         <button
-                          onClick={() => {
-                            setCategories((prev) => prev.filter((x) => x.id !== c.id));
-                            if (editingId === c.id) {
-                              setEditingId(null);
-                              setName("");
+                          onClick={async () => {
+                            // send delete
+                            const res = await fetch('/api/category', {
+                              method: 'DELETE',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ id: c.id }),
+                            });
+                            if (res.ok) {
+                              setCategories((prev) => prev.filter((x) => x.id !== c.id));
+                              if (editingId === c.id) {
+                                setEditingId(null);
+                                setName("");
+                              }
+                            } else {
+                              const d = await res.json();
+                              alert('Failed to delete category');
+                              console.error(d.msg);
                             }
                           }}
                           className="text-red-600 hover:underline"

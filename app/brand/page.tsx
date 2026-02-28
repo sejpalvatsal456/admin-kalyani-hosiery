@@ -188,12 +188,23 @@ export default function BrandPage() {
                           Edit
                         </button>
                         <button
-                          onClick={() => {
-                            setBrands((prev) => prev.filter((x) => x.id !== b.id));
-                            if (editingId === b.id) {
-                              setEditingId(null);
-                              setName("");
-                              setLogoUrl("");
+                          onClick={async () => {
+                            const res = await fetch('/api/brand/', {
+                              method: 'DELETE',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ id: b.id }),
+                            });
+                            if (res.ok) {
+                              setBrands((prev) => prev.filter((x) => x.id !== b.id));
+                              if (editingId === b.id) {
+                                setEditingId(null);
+                                setName("");
+                                setLogoUrl("");
+                              }
+                            } else {
+                              const d = await res.json();
+                              alert('Failed to delete brand');
+                              console.error(d.msg);
                             }
                           }}
                           className="text-red-600 hover:underline"
