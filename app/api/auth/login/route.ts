@@ -7,21 +7,21 @@ import jwt from "jsonwebtoken";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password } = body as { email: string; password: string };
+    const { name, password } = body as { name: string; password: string };
 
-    if (!email || !password) {
+    if (!name || !password) {
       return NextResponse.json({ error: "Missing credentials" }, { status: 400 });
     }
 
     await connectDB();
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ name });
     if (!user) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
 
     const match = await bcrypt.compare(password, user.hashedPassword);
     if (!match) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
 
     const token = jwt.sign(
-      { id: user._id.toString(), role: user.role, email: user.email },
+      { id: user._id.toString(), role: user.role, name: user.name },
       process.env.JWT_SECRET as string,
       { expiresIn: "1h" }
     );
