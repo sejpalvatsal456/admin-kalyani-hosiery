@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
     if (!token) return NextResponse.json({ user: null }, { status: 401 });
 
     const payload = jwt.verify(token, process.env.JWT_SECRET as string) as any;
-    return NextResponse.json({ user: { id: payload.id, email: payload.email, role: payload.role } });
+    return NextResponse.json({ user: { id: payload.id } });
   } catch (err) {
     return NextResponse.json({ user: null }, { status: 401 });
   }

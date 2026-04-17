@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 
 export default function LoginPage() {
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
 
@@ -14,7 +14,7 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       if (res.ok) {
@@ -33,8 +33,8 @@ export default function LoginPage() {
       <h1 className="text-2xl mb-4">Admin Login</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           placeholder="Name"
           className="w-full p-2 border"
         />
