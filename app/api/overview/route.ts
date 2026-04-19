@@ -10,10 +10,11 @@ export const GET = async(req: NextRequest) => {
 
     // Total Sales: sum of totalAmount from Orders with status "paid"
     const salesResult = await Order.aggregate([
-      { $match: { status: "paid" } },
+      { $match: { paymentStatus: "paid" } },
       { $group: { _id: null, total: { $sum: "$totalAmount" } } },
     ]);
-    const totalSales = salesResult[0]?.total || 0;
+    console.log(salesResult);
+    const totalSales = salesResult.length > 0 ? salesResult[0].total : 0;
 
     // Total Products: count of Product documents
     const totalProducts = await Product.countDocuments();

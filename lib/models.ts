@@ -219,6 +219,7 @@ const OrderSchema = new Schema(
       ],
     },
     shippingAddress: { type: String },
+    totalAmount: { type: Number, required: true, default: 0 },
     paymentStatus: {
       type: String,
       enum: ["pending", "paid", "failed", "refunded"],
