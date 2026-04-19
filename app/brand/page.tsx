@@ -4,8 +4,8 @@ import React, { useState, useEffect } from "react";
 
 type Brand = {
   id: string;
-  name: string;
-  logoUrl: string;
+  brandName: string;
+  brandLogo: string;
 };
 
 const placeholder = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect fill='%23e5e7eb' width='100%25' height='100%25'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%236b7280' font-size='20'>No Image</text></svg>";
@@ -24,13 +24,13 @@ export default function BrandPage() {
       const res = await fetch('/api/brand/', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: editingId, name: name.trim(), logo: logoUrl.trim() }),
+        body: JSON.stringify({ id: editingId, brandName: name.trim(), brandLogo: logoUrl.trim() }),
       });
       const data = await res.json();
       if (res.ok) {
         setBrands((prev) =>
           prev.map((b) =>
-            b.id === editingId ? { ...b, name: name.trim(), logoUrl: logoUrl.trim() } : b
+            b.id === editingId ? { ...b, brandName: name.trim(), brandLogo: logoUrl.trim() } : b
           )
         );
       } else {
@@ -42,7 +42,7 @@ export default function BrandPage() {
       const res = await fetch('/api/brand/', {
         method : "POST", 
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name, logo: logoUrl })
+        body: JSON.stringify({ brandName: name, brandLogo: logoUrl })
       });
       const data = await res.json();
       if (!res.ok) {
@@ -51,7 +51,7 @@ export default function BrandPage() {
         return;
       }
       setBrands((prev) => [
-        { id: data.brand._id, name: data.brand.name.trim(), logoUrl: data.brand.logo.trim() },
+        { id: data.brand._id, brandName: data.brand.brandName.trim(), brandLogo: data.brand.brandLogo.trim() },
         ...prev,
       ]);
     }
@@ -66,12 +66,13 @@ export default function BrandPage() {
       try {
         const res = await fetch('/api/brand');
         const data = await res.json();
+        console.log(data);
         if (res.ok) {
           setBrands(
             data.brands.map((b: any) => ({
               id: b._id,
-              name: b.name,
-              logoUrl: b.logo,
+              brandName: b.brandName,
+              brandLogo: b.brandLogo,
             }))
           );
         } else {
@@ -157,10 +158,10 @@ export default function BrandPage() {
                   {brands.map((b) => (
                     <tr key={b.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {b.logoUrl ? (
+                        {b.brandLogo ? (
                           <img
-                            src={b.logoUrl}
-                            alt={b.name}
+                            src={b.brandLogo}
+                            alt={b.brandName}
                             onError={(e) => {
                               const targ = e.currentTarget as HTMLImageElement;
                               targ.src = placeholder;
@@ -169,19 +170,19 @@ export default function BrandPage() {
                           />
                         ) : (
                           <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-gray-600">
-                            {b.name.charAt(0).toUpperCase()}
+                            {b.brandName.charAt(0).toUpperCase()}
                           </div>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {b.name}
+                        {b.brandName}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         <button
                           onClick={() => {
                             setEditingId(b.id);
-                            setName(b.name);
-                            setLogoUrl(b.logoUrl);
+                            setName(b.brandName);
+                            setLogoUrl(b.brandLogo);
                           }}
                           className="text-blue-600 hover:underline mr-2"
                         >
@@ -189,7 +190,7 @@ export default function BrandPage() {
                         </button>
                         <button
                           onClick={async () => {
-                            if (!confirm(`Delete brand "${b.name}"? This will also remove all related products.`)) return;
+                            if (!confirm(`Delete brand "${b.brandName}"? This will also remove all related products.`)) return;
                             const res = await fetch('/api/brand/', {
                               method: 'DELETE',
                               headers: { 'Content-Type': 'application/json' },

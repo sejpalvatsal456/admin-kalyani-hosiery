@@ -2,37 +2,52 @@
 
 import React, { useState, useEffect } from "react";
 
+
+
 type Subcategory = {
   id: string;
   name: string;
   categoryId: string;
   categoryName: string;
+  logoLink: string;
 };
 
 type Category = { id: string; name: string };
 
+const placeholder = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect fill='%23e5e7eb' width='100%25' height='100%25'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%236b7280' font-size='20'>No Image</text></svg>";
+
+
 export default function SubcategoryPage() {
   const [name, setName] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
+  const [logoLink, setlogoLink] = useState<string>("");
   const [items, setItems] = useState<Subcategory[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const getCategory = (subId: string, ) => {
+
+    return categories.find((sub) => sub.id === subId);
+
+  } 
+
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !categoryId) return;
+    if (!name.trim() || !categoryId || !logoLink) return;
     if (editingId !== null) {
       const res = await fetch('/api/subcategory', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: editingId, name: name.trim(), categoryId }),
+        body: JSON.stringify({ id: editingId, name: name.trim(), categoryId, logoLink: logoLink }),
       });
       const data = await res.json();
       if (res.ok) {
+        console.log("SUBcategory Update data from APi: ")
+        console.log(data);
         setItems((prev) =>
           prev.map((it) =>
             it.id === editingId
-              ? { ...it, name: name.trim(), categoryId, categoryName: data.subcategory.categoryId.name }
+              ? { ...it, name: name.trim(), categoryId, categoryName: getCategory(categoryId)?.name || "", logoLink: logoLink }
               : it
           )
         );
@@ -45,16 +60,18 @@ export default function SubcategoryPage() {
       const res = await fetch('/api/subcategory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), categoryId }),
+        body: JSON.stringify({ name: name.trim(), categoryId, logoLink }),
       });
       const data = await res.json();
       if (res.ok) {
+        
         setItems((prev) => [
           {
             id: data.subcategory._id,
             name: data.subcategory.name,
             categoryId,
-            categoryName: data.subcategory.categoryId.name,
+            categoryName: getCategory(categoryId)?.name || "",
+            logoLink: data.subcategory.logoLink
           },
           ...prev,
         ]);
@@ -65,6 +82,7 @@ export default function SubcategoryPage() {
     }
     setName("");
     setCategoryId(categories[0]?.id || "");
+    setlogoLink("");
   }
 
   // load categories and subcategories
@@ -87,12 +105,15 @@ export default function SubcategoryPage() {
         }
         const subData = await subRes.json();
         if (subRes.ok) {
+          console.log("Subcategory From API: ");
+          console.log(subData);
           setItems(
             subData.subcategories.map((s: any) => ({
               id: s._id,
               name: s.name,
               categoryId: s.categoryId._id,
               categoryName: s.categoryId.name,
+              logoLink: s.logoLink
             }))
           );
         }
@@ -138,6 +159,16 @@ export default function SubcategoryPage() {
                 ))}
               </select>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Logo URL</label>
+              <input
+                value={logoLink}
+                onChange={(e) => setlogoLink(e.target.value)}
+                className="mt-1 block w-full border-gray-300 rounded p-2"
+                placeholder="Logo Url..."
+                required
+              />
+            </div>
             <div className="pt-2">
               <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
                 {editingId !== null ? 'Update Subcategory' : 'Add Subcategory'}
@@ -159,8 +190,9 @@ export default function SubcategoryPage() {
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      ID
+                      Logo
                     </th>
+
                     <th
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -184,8 +216,22 @@ export default function SubcategoryPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {items.map((it) => (
                     <tr key={it.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {it.id}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {it.logoLink ? (
+                          <img
+                            src={it.logoLink}
+                            alt={it.name}
+                            onError={(e) => {
+                              const targ = e.currentTarget as HTMLImageElement;
+                              targ.src = placeholder;
+                            }}
+                            className="w-12 h-12 object-cover rounded"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center text-gray-600">
+                            {it.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {it.name}

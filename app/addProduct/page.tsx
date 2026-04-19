@@ -5,19 +5,21 @@ import { useRouter } from "next/navigation";
 
 // types matching schema
 interface Size {
-  id: string;
-  size: string;
+  sizeID: string;
+  sku: string;
+  sizeName: string;
   mrp: number;
   sellingPrice: number;
+  discountPercent: number;
   stock: number;
 }
 
 interface Variety {
-  id: string;
+  colorID: string;
   colorName: string;
-  color: string;
+  colorCode: string; // Starts with #, max 7 chars
   imgLinks: string[];
-  sizes: Size[];
+  sizes: Size[]; // Minimum 1 element
 }
 
 interface Desc {
@@ -31,8 +33,10 @@ interface ProductInput {
   categoryId: string;
   subcategoryId: string;
   thumbnail: string;
-  variety: Variety[];
+  varients: Variety[];
   desc: Desc[];
+  tags: string[];
+  loc: string;
 }
 
 // dynamic options
@@ -50,8 +54,10 @@ export default function AddProductPage() {
     categoryId: "",
     subcategoryId: "",
     thumbnail: "",
-    variety: [],
+    varients: [],
     desc: [],
+    tags: [],
+    loc: "",
   });
 
   const [brandsList, setBrandsList] = useState<{ id: string; name: string }[]>([]);
@@ -65,52 +71,54 @@ export default function AddProductPage() {
   const addVariety = () => {
     setForm((f) => ({
       ...f,
-      variety: [
-        ...f.variety,
-        { id: generateId(), colorName: "", color: "", imgLinks: [""], sizes: [] },
+      varients: [
+        ...f.varients,
+        { colorID: generateId(), colorName: "", colorCode: "", imgLinks: [""], sizes: [] },
       ],
     }));
   };
 
   const updateVariety = (idx: number, changes: Partial<Variety>) => {
     setForm((f) => {
-      const v = [...f.variety];
+      const v = [...f.varients];
       v[idx] = { ...v[idx], ...changes };
-      return { ...f, variety: v };
+      return { ...f, varients: v };
     });
   };
 
   const addVarietyImage = (vIdx: number) => {
     updateVariety(vIdx, {
-      imgLinks: [...form.variety[vIdx].imgLinks, ""],
+      imgLinks: [...form.varients[vIdx].imgLinks, ""],
     });
   };
 
   const updateVarietyImage = (vIdx: number, iIdx: number, url: string) => {
     setForm((f) => {
-      const v = [...f.variety];
+      const v = [...f.varients];
       const imgs = [...v[vIdx].imgLinks];
       imgs[iIdx] = url;
       v[vIdx].imgLinks = imgs;
-      return { ...f, variety: v };
+      return { ...f, varients: v };
     });
   };
 
   const addSize = (vIdx: number) => {
     const newSize: Size = {
-      id: generateId(),
-      size: "",
+      sizeID: generateId(),
+      sizeName: "",
       mrp: 0,
       sellingPrice: 0,
+      discountPercent: 0,
+      sku: '',
       stock: 0,
     };
     setForm((prevForm) => {
-      const newVariety = [...prevForm.variety];
+      const newVariety = [...prevForm.varients];
       newVariety[vIdx] = {
         ...newVariety[vIdx],
         sizes: [...newVariety[vIdx].sizes, newSize],
       };
-      return { ...prevForm, variety: newVariety };
+      return { ...prevForm, varients: newVariety };
     });
   };
 
@@ -120,11 +128,18 @@ export default function AddProductPage() {
     changes: Partial<Size>
   ) => {
     setForm((f) => {
-      const v = [...f.variety];
+      const v = [...f.varients];
       const s = [...v[vIdx].sizes];
       s[sIdx] = { ...s[sIdx], ...changes };
+      // Calculate discountPercent if mrp and sellingPrice are updated and non-zero
+      const updatedSize = s[sIdx];
+      if (updatedSize.mrp > 0 && updatedSize.sellingPrice > 0) {
+        updatedSize.discountPercent = ((updatedSize.mrp - updatedSize.sellingPrice) * 100) / updatedSize.mrp;
+      } else {
+        updatedSize.discountPercent = 0;
+      }
       v[vIdx].sizes = s;
-      return { ...f, variety: v };
+      return { ...f, varients: v };
     });
   };
 
@@ -146,6 +161,21 @@ export default function AddProductPage() {
     });
   };
 
+  const addTag = () => {
+    setForm((f) => ({
+      ...f,
+      tags: [...f.tags, ""],
+    }));
+  };
+
+  const updateTag = (idx: number, value: string) => {
+    setForm((f) => {
+      const t = [...f.tags];
+      t[idx] = value;
+      return { ...f, tags: t };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await fetch("/api/product", {
@@ -161,7 +191,9 @@ export default function AddProductPage() {
       try {
         const [bRes, cRes] = await Promise.all([fetch("/api/brand"), fetch("/api/category")]);
         const bData = await bRes.json();
-        if (bRes.ok) setBrandsList(bData.brands.map((b: any) => ({ id: b._id, name: b.name })));
+        console.log("Brand data from API: ");
+        console.log(bData);
+        if (bRes.ok) setBrandsList(bData.brands.map((b: any) => ({ id: b._id, name: b.brandName })));
         const cData = await cRes.json();
         if (cRes.ok) {
           setCategoriesList(cData.categories.map((c: any) => ({ id: c._id, name: c.name })));
@@ -269,13 +301,24 @@ export default function AddProductPage() {
               className="mt-1 block w-full border-gray-300 rounded p-2"
             />
           </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Location
+            </label>
+            <input
+              value={form.loc}
+              onChange={(e) => handleChange("loc", e.target.value)}
+              className="mt-1 block w-full border-gray-300 rounded p-2"
+              placeholder="Enter location"
+            />
+          </div>
         </div>
 
         {/* varieties */}
         <div>
           <h2 className="text-lg font-semibold mb-2">Varieties</h2>
-          {form.variety.map((v, vi) => (
-            <div key={v.id} className="border p-4 rounded mb-4">
+          {form.varients.map((v, vi) => (
+            <div key={v.colorID} className="border p-4 rounded mb-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
@@ -294,9 +337,9 @@ export default function AddProductPage() {
                     Color
                   </label>
                   <input
-                    value={v.color}
-                    onChange={(e) => updateVariety(vi, { color: e.target.value })}
-                    className="mt-1 block w-full border-gray-300 rounded p-2"
+                    value={v.colorCode}
+                    onChange={(e) => updateVariety(vi, { colorCode: e.target.value })}
+                    className="mt-1 block w-full h-10 border-gray-300 rounded p-2"
                     type="color"
                   />
                 </div>
@@ -331,16 +374,27 @@ export default function AddProductPage() {
                 <h3 className="font-medium">Sizes</h3>
                 {v.sizes.map((s, si) => (
                   <div
-                    key={s.id}
-                    className="grid grid-cols-1 md:grid-cols-5 gap-2 mt-2"
+                    key={s.sizeID}
+                    className="grid grid-cols-1 md:grid-cols-6 gap-2 mt-2"
                   >
                     <div>
                       <label className="text-xs font-medium text-gray-700">Size</label>
                       <input
                         placeholder="e.g. L"
-                        value={s.size}
+                        value={s.sizeName}
                         onChange={(e) =>
-                          updateSize(vi, si, { size: e.target.value })
+                          updateSize(vi, si, { sizeName: e.target.value })
+                        }
+                        className="border border-gray-300 rounded p-1 w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">SKU</label>
+                      <input
+                        placeholder="SKU"
+                        value={s.sku}
+                        onChange={(e) =>
+                          updateSize(vi, si, { sku: e.target.value })
                         }
                         className="border border-gray-300 rounded p-1 w-full"
                       />
@@ -427,6 +481,28 @@ export default function AddProductPage() {
             className="bg-blue-600 text-white px-4 py-2 rounded"
           >
             Add Description
+          </button>
+        </div>
+
+        {/* tags */}
+        <div>
+          <h2 className="text-lg font-semibold mb-2">Tags</h2>
+          {form.tags.map((tag, ti) => (
+            <div key={ti} className="mb-2">
+              <input
+                placeholder="Tag"
+                value={tag}
+                onChange={(e) => updateTag(ti, e.target.value)}
+                className="border-gray-300 rounded p-1 w-full"
+              />
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addTag}
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            Add Tag
           </button>
         </div>
 

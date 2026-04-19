@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     if (!match) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
 
     const token = jwt.sign(
-      { id: admin._id.toString(), name: admin.username },
+      { id: admin._id.toString(), name: admin.username, role: "admin" },
       process.env.JWT_SECRET as string,
       { expiresIn: "1h" }
     );

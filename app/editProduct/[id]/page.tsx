@@ -5,19 +5,21 @@ import { useRouter, useParams } from "next/navigation";
 
 // types matching schema
 interface Size {
-  id: string;
-  size: string;
+  sizeID: string;
+  sku: string;
+  sizeName: string;
   mrp: number;
   sellingPrice: number;
+  discountPercent: number;
   stock: number;
 }
 
 interface Variety {
-  id: string;
+  colorID: string;
   colorName: string;
-  color: string;
+  colorCode: string; // Starts with #, max 7 chars
   imgLinks: string[];
-  sizes: Size[];
+  sizes: Size[]; // Minimum 1 element
 }
 
 interface Desc {
@@ -26,14 +28,16 @@ interface Desc {
 }
 
 interface ProductInput {
-  id?: string;
+  _id?: string;
   brandId: string;
   productName: string;
   categoryId: string;
   subcategoryId: string;
   thumbnail: string;
-  variety: Variety[];
+  varients: Variety[];
   desc: Desc[];
+  tags: string[];
+  loc: string;
 }
 
 // dynamic lists fetched from server
@@ -48,17 +52,25 @@ export default function EditProductPage() {
   const productId = params.id as string;
 
   const [loading, setLoading] = useState(true);
-  const [brandsList, setBrandsList] = useState<{ id: string; name: string }[]>([]);
-  const [categoriesList, setCategoriesList] = useState<{ id: string; name: string }[]>([]);
-  const [subcategoriesList, setSubcategoriesList] = useState<{ id: string; name: string }[]>([]);
+  const [brandsList, setBrandsList] = useState<{ id: string; brandName: string }[]>(
+    [],
+  );
+  const [categoriesList, setCategoriesList] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [subcategoriesList, setSubcategoriesList] = useState<
+    { id: string; name: string }[]
+  >([]);
   const [form, setForm] = useState<ProductInput>({
     brandId: "",
     productName: "",
     categoryId: "",
     subcategoryId: "",
     thumbnail: "",
-    variety: [],
+    varients: [],
     desc: [],
+    tags: [],
+    loc: "",
   });
 
   useEffect(() => {
@@ -71,7 +83,8 @@ export default function EditProductPage() {
         const res = await fetch(`/api/product?id=${productId}`);
         const data = await res.json();
         if (data) {
-          setForm(data);
+          console.log({...data, brandId: data.brandId._id, categoryId: data.categoryId._id, subcategoryId: data.subcategoryId._id});
+          setForm({...data, brandId: data.brandId._id, categoryId: data.categoryId._id, subcategoryId: data.subcategoryId._id});
         }
       } catch (err) {
         console.error(err);
@@ -86,28 +99,47 @@ export default function EditProductPage() {
   useEffect(() => {
     async function loadOptions() {
       try {
-        const [bRes, cRes] = await Promise.all([fetch("/api/brand"), fetch("/api/category")]);
+        const [bRes, cRes] = await Promise.all([
+          fetch("/api/brand"),
+          fetch("/api/category"),
+        ]);
         const bData = await bRes.json();
-        if (bRes.ok) setBrandsList(bData.brands.map((b: any) => ({ id: b._id, name: b.name })));
+        if (bRes.ok)
+          setBrandsList(
+            bData.brands.map((b: any) => ({ id: b._id, brandName: b.brandName })),
+          );
         const cData = await cRes.json();
-        if (cRes.ok) setCategoriesList(cData.categories.map((c: any) => ({ id: c._id, name: c.name })));
+        if (cRes.ok)
+          setCategoriesList(
+            cData.categories.map((c: any) => ({ id: c._id, name: c.name })),
+          );
       } catch (err) {
-        console.error('Failed to load brands/categories', err);
+        console.error("Failed to load brands/categories", err);
       }
     }
     loadOptions();
   }, []);
+
+  useEffect(() => {
+    console.log("Form Data: ");
+    console.log(form);
+  }, [form])
 
   // refetch subcategories when category changes
   useEffect(() => {
     async function loadSubs() {
       if (!form.categoryId) return setSubcategoriesList([]);
       try {
-        const res = await fetch(`/api/subcategory?categoryId=${form.categoryId}`);
+        const res = await fetch(
+          `/api/subcategory?categoryId=${form.categoryId}`,
+        );
         const data = await res.json();
-        if (res.ok) setSubcategoriesList(data.subcategories.map((s: any) => ({ id: s._id, name: s.name })));
+        if (res.ok)
+          setSubcategoriesList(
+            data.subcategories.map((s: any) => ({ id: s._id, name: s.name })),
+          );
       } catch (err) {
-        console.error('Failed to load subcategories', err);
+        console.error("Failed to load subcategories", err);
       }
     }
     loadSubs();
@@ -120,66 +152,79 @@ export default function EditProductPage() {
   const addVariety = () => {
     setForm((f) => ({
       ...f,
-      variety: [
-        ...f.variety,
-        { id: generateId(), colorName: "", color: "", imgLinks: [""], sizes: [] },
+      varients: [
+        ...f.varients,
+        {
+          colorID: generateId(),
+          colorName: "",
+          colorCode: "",
+          imgLinks: [""],
+          sizes: [],
+        },
       ],
     }));
   };
 
   const updateVariety = (idx: number, changes: Partial<Variety>) => {
     setForm((f) => {
-      const v = [...f.variety];
+      const v = [...f.varients];
       v[idx] = { ...v[idx], ...changes };
-      return { ...f, variety: v };
+      return { ...f, varients: v };
     });
   };
 
   const addVarietyImage = (vIdx: number) => {
     updateVariety(vIdx, {
-      imgLinks: [...form.variety[vIdx].imgLinks, ""],
+      imgLinks: [...form.varients[vIdx].imgLinks, ""],
     });
   };
 
   const updateVarietyImage = (vIdx: number, iIdx: number, url: string) => {
     setForm((f) => {
-      const v = [...f.variety];
+      const v = [...f.varients];
       const imgs = [...v[vIdx].imgLinks];
       imgs[iIdx] = url;
       v[vIdx].imgLinks = imgs;
-      return { ...f, variety: v };
+      return { ...f, varients: v };
     });
   };
 
   const addSize = (vIdx: number) => {
     const newSize: Size = {
-      id: generateId(),
-      size: "",
+      sizeID: generateId(),
+      sizeName: "",
       mrp: 0,
       sellingPrice: 0,
+      discountPercent: 0,
+      sku: "",
       stock: 0,
     };
     setForm((prevForm) => {
-      const newVariety = [...prevForm.variety];
+      const newVariety = [...prevForm.varients];
       newVariety[vIdx] = {
         ...newVariety[vIdx],
         sizes: [...newVariety[vIdx].sizes, newSize],
       };
-      return { ...prevForm, variety: newVariety };
+      return { ...prevForm, varients: newVariety };
     });
   };
 
-  const updateSize = (
-    vIdx: number,
-    sIdx: number,
-    changes: Partial<Size>
-  ) => {
+  const updateSize = (vIdx: number, sIdx: number, changes: Partial<Size>) => {
     setForm((f) => {
-      const v = [...f.variety];
+      const v = [...f.varients];
       const s = [...v[vIdx].sizes];
       s[sIdx] = { ...s[sIdx], ...changes };
+      // Calculate discountPercent if mrp and sellingPrice are updated and non-zero
+      const updatedSize = s[sIdx];
+      if (updatedSize.mrp > 0 && updatedSize.sellingPrice > 0) {
+        updatedSize.discountPercent =
+          ((updatedSize.mrp - updatedSize.sellingPrice) * 100) /
+          updatedSize.mrp;
+      } else {
+        updatedSize.discountPercent = 0;
+      }
       v[vIdx].sizes = s;
-      return { ...f, variety: v };
+      return { ...f, varients: v };
     });
   };
 
@@ -190,10 +235,7 @@ export default function EditProductPage() {
     }));
   };
 
-  const updateDesc = (
-    idx: number,
-    changes: Partial<Desc>
-  ) => {
+  const updateDesc = (idx: number, changes: Partial<Desc>) => {
     setForm((f) => {
       const d = [...f.desc];
       d[idx] = { ...d[idx], ...changes };
@@ -201,10 +243,25 @@ export default function EditProductPage() {
     });
   };
 
+  const addTag = () => {
+    setForm((f) => ({
+      ...f,
+      tags: [...f.tags, ""],
+    }));
+  };
+
+  const updateTag = (idx: number, value: string) => {
+    setForm((f) => {
+      const t = [...f.tags];
+      t[idx] = value;
+      return { ...f, tags: t };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await fetch("/api/product", {
-      method: "PUT",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
@@ -230,7 +287,9 @@ export default function EditProductPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Brand</label>
+            <label className="block text-sm font-medium text-gray-700">
+              Brand
+            </label>
             <select
               value={form.brandId}
               onChange={(e) => handleChange("brandId", e.target.value)}
@@ -240,7 +299,7 @@ export default function EditProductPage() {
               <option value="">Select brand</option>
               {brandsList.map((b) => (
                 <option key={b.id} value={b.id}>
-                  {b.name}
+                  {b.brandName}
                 </option>
               ))}
             </select>
@@ -291,13 +350,24 @@ export default function EditProductPage() {
               className="mt-1 block w-full border-gray-300 rounded p-2"
             />
           </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Location
+            </label>
+            <input
+              value={form.loc}
+              onChange={(e) => handleChange("loc", e.target.value)}
+              className="mt-1 block w-full border-gray-300 rounded p-2"
+              placeholder="Enter location"
+            />
+          </div>
         </div>
 
         {/* varieties */}
         <div>
           <h2 className="text-lg font-semibold mb-2">Varieties</h2>
-          {form.variety.map((v, vi) => (
-            <div key={v.id} className="border p-4 rounded mb-4">
+          {form.varients.map((v, vi) => (
+            <div key={v.colorID} className="border p-4 rounded mb-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
@@ -316,9 +386,11 @@ export default function EditProductPage() {
                     Color
                   </label>
                   <input
-                    value={v.color}
-                    onChange={(e) => updateVariety(vi, { color: e.target.value })}
-                    className="mt-1 block w-full border-gray-300 rounded p-2"
+                    value={v.colorCode}
+                    onChange={(e) =>
+                      updateVariety(vi, { colorCode: e.target.value })
+                    }
+                    className="mt-1 block w-full h-10 border-gray-300 rounded p-2"
                     type="color"
                   />
                 </div>
@@ -340,9 +412,7 @@ export default function EditProductPage() {
                   </label>
                   <input
                     value={img}
-                    onChange={(e) =>
-                      updateVarietyImage(vi, ii, e.target.value)
-                    }
+                    onChange={(e) => updateVarietyImage(vi, ii, e.target.value)}
                     className="mt-1 block w-full border-gray-300 rounded p-2"
                   />
                 </div>
@@ -353,22 +423,39 @@ export default function EditProductPage() {
                 <h3 className="font-medium">Sizes</h3>
                 {v.sizes.map((s, si) => (
                   <div
-                    key={s.id}
-                    className="grid grid-cols-1 md:grid-cols-5 gap-2 mt-2"
+                    key={s.sizeID}
+                    className="grid grid-cols-1 md:grid-cols-6 gap-2 mt-2"
                   >
                     <div>
-                      <label className="text-xs font-medium text-gray-700">Size</label>
+                      <label className="text-xs font-medium text-gray-700">
+                        Size
+                      </label>
                       <input
                         placeholder="e.g. L"
-                        value={s.size}
+                        value={s.sizeName}
                         onChange={(e) =>
-                          updateSize(vi, si, { size: e.target.value })
+                          updateSize(vi, si, { sizeName: e.target.value })
                         }
                         className="border border-gray-300 rounded p-1 w-full"
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-gray-700">MRP</label>
+                      <label className="text-xs font-medium text-gray-700">
+                        SKU
+                      </label>
+                      <input
+                        placeholder="SKU"
+                        value={s.sku}
+                        onChange={(e) =>
+                          updateSize(vi, si, { sku: e.target.value })
+                        }
+                        className="border border-gray-300 rounded p-1 w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">
+                        MRP
+                      </label>
                       <input
                         placeholder="Max Retail"
                         type="number"
@@ -380,19 +467,37 @@ export default function EditProductPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-gray-700">Selling Price</label>
+                      <label className="text-xs font-medium text-gray-700">
+                        Selling Price
+                      </label>
                       <input
                         placeholder="Sale Price"
                         type="number"
                         value={s.sellingPrice}
                         onChange={(e) =>
-                          updateSize(vi, si, { sellingPrice: Number(e.target.value) })
+                          updateSize(vi, si, {
+                            sellingPrice: Number(e.target.value),
+                          })
                         }
                         className="border border-gray-300 rounded p-1 w-full"
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-gray-700">Stock</label>
+                      <label className="text-xs font-medium text-gray-700">
+                        Discount %
+                      </label>
+                      <input
+                        placeholder="Auto calculated"
+                        type="number"
+                        value={s.discountPercent.toFixed(2)}
+                        readOnly
+                        className="border border-gray-300 rounded p-1 w-full bg-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-gray-700">
+                        Stock
+                      </label>
                       <input
                         placeholder="Quantity"
                         type="number"
@@ -428,7 +533,10 @@ export default function EditProductPage() {
         <div>
           <h2 className="text-lg font-semibold mb-2">Description</h2>
           {form.desc.map((d, di) => (
-            <div key={di} className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+            <div
+              key={di}
+              className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2"
+            >
               <input
                 placeholder="Key"
                 value={d.key}

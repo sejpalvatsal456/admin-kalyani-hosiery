@@ -2,6 +2,15 @@ import { connectDB } from "@/lib/connectDB";
 import { Subcategory, Product } from "@/lib/models";
 import { NextRequest, NextResponse } from "next/server";
 
+const getSlug = (name: string): string => {
+  return name
+    .toLowerCase()                   // Convert to lowercase
+    .trim()                          // Remove whitespace from both ends
+    .replace(/[^\w\s-]/g, '')       // Remove all non-word characters (except spaces and hyphens)
+    .replace(/[\s_-]+/g, '_')        // Replace spaces, underscores, or hyphens with a single underscore
+    .replace(/^-+|-+$/g, '');        // Remove leading or trailing underscores/hyphens
+};
+
 // get all subcategories (populated with category name)
 export const GET = async (req: NextRequest) => {
   try {
@@ -25,13 +34,14 @@ export const GET = async (req: NextRequest) => {
 export const POST = async (req: NextRequest) => {
   try {
     await connectDB();
-    const { name, categoryId } = (await req.json()) as {
+    const { name, categoryId, logoLink } = (await req.json()) as {
       name: string;
       categoryId: string;
+      logoLink: string;
     };
-    if (!name || !categoryId || name.trim() === "" || categoryId === "") {
+    if (!name || !categoryId || name.trim() === "" || categoryId === "" || !logoLink || logoLink.trim() === "") {
       return NextResponse.json(
-        { msg: "name and categoryId must be provided" },
+        { msg: "name, categoryId and logo must be provided" },
         { status: 500 }
       );
     }
@@ -48,7 +58,7 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    const sub = await Subcategory.create({ name: name.trim(), categoryId });
+    const sub = await Subcategory.create({ name: name.trim(), slug: getSlug(name.trim()), categoryId, logoLink });
     return NextResponse.json({ subcategory: sub }, { status: 200 });
   } catch (error) {
     console.log(error);
@@ -63,12 +73,13 @@ export const POST = async (req: NextRequest) => {
 export const PATCH = async (req: NextRequest) => {
   try {
     await connectDB();
-    const { id, name, categoryId } = (await req.json()) as {
+    const { id, name, categoryId, logoLink } = (await req.json()) as {
       id: string;
       name: string;
       categoryId: string;
+      logoLink: string;
     };
-    if (!id || !name || !categoryId || name.trim() === "" || categoryId === "") {
+    if (!id || !name || !categoryId || name.trim() === "" || categoryId === "" || !logoLink || logoLink.trim() === "") {
       return NextResponse.json(
         { msg: "id, name and categoryId must be provided" },
         { status: 500 }
@@ -83,11 +94,14 @@ export const PATCH = async (req: NextRequest) => {
     // if name or category changed, check duplicate
     if (
       sub.name !== name.trim() ||
-      sub.categoryId.toString() !== categoryId
+      sub.categoryId.toString() !== categoryId ||
+      sub.logoLink !== logoLink.trim()
     ) {
       const conflict = await Subcategory.findOne({
         name: name.trim(),
+        slug: getSlug(name.trim()),
         categoryId,
+        logoLink: logoLink.trim()
       });
       if (conflict) {
         return NextResponse.json(
@@ -98,7 +112,9 @@ export const PATCH = async (req: NextRequest) => {
     }
 
     sub.name = name.trim();
+    sub.slug = getSlug(name.trim());
     sub.categoryId = categoryId;
+    sub.logoLink = logoLink.trim();
     await sub.save();
     return NextResponse.json({ subcategory: sub }, { status: 200 });
   } catch (error) {
