@@ -122,6 +122,24 @@ export default function AddProductPage() {
     });
   };
 
+  const removeSize = (vIdx: number, sIdx: number) => {
+    setForm((prevForm) => {
+      const newVariety = [...prevForm.varients];
+      const sizes = [...newVariety[vIdx].sizes];
+      sizes.splice(sIdx, 1);
+      newVariety[vIdx] = { ...newVariety[vIdx], sizes };
+      return { ...prevForm, varients: newVariety };
+    });
+  };
+
+  const removeVariety = (vIdx: number) => {
+    setForm((prevForm) => {
+      const varients = [...prevForm.varients];
+      varients.splice(vIdx, 1);
+      return { ...prevForm, varients };
+    });
+  };
+
   const updateSize = (
     vIdx: number,
     sIdx: number,
@@ -176,6 +194,22 @@ export default function AddProductPage() {
     });
   };
 
+  const removeDesc = (idx: number) => {
+    setForm((f) => {
+      const d = [...f.desc];
+      d.splice(idx, 1);
+      return { ...f, desc: d };
+    });
+  };
+
+  const removeTag = (idx: number) => {
+    setForm((f) => {
+      const t = [...f.tags];
+      t.splice(idx, 1);
+      return { ...f, tags: t };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await fetch("/api/product", {
@@ -224,297 +258,346 @@ export default function AddProductPage() {
   }, [form.categoryId]);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <h1 className="text-2xl font-bold mb-6">Add Product</h1>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Product Name
-            </label>
-            <input
-              value={form.productName}
-              onChange={(e) => handleChange("productName", e.target.value)}
-              className="mt-1 block w-full border-gray-300 rounded p-2"
-              required
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Brand</label>
-            <select
-              value={form.brandId}
-              onChange={(e) => handleChange("brandId", e.target.value)}
-              className="mt-1 block w-full border-gray-300 rounded p-2"
-              required
-            >
-              <option value="">Select brand</option>
-              {brandsList.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Category
-            </label>
-            <select
-              value={form.categoryId}
-              onChange={(e) => handleChange("categoryId", e.target.value)}
-              className="mt-1 block w-full border-gray-300 rounded p-2"
-              required
-            >
-              <option value="">Select category</option>
-              {categoriesList.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Subcategory
-            </label>
-            <select
-              value={form.subcategoryId}
-              onChange={(e) => handleChange("subcategoryId", e.target.value)}
-              className="mt-1 block w-full border-gray-300 rounded p-2"
-              required
-            >
-              <option value="">Select subcategory</option>
-              {subcategoriesList.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Thumbnail URL
-            </label>
-            <input
-              value={form.thumbnail}
-              onChange={(e) => handleChange("thumbnail", e.target.value)}
-              className="mt-1 block w-full border-gray-300 rounded p-2"
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Location
-            </label>
-            <input
-              value={form.loc}
-              onChange={(e) => handleChange("loc", e.target.value)}
-              className="mt-1 block w-full border-gray-300 rounded p-2"
-              placeholder="Enter location"
-            />
-          </div>
+    <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-7xl overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_35px_60px_-35px_rgba(15,23,42,0.35)]">
+        <div className="border-b border-slate-200 px-6 py-8 sm:px-10">
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">Add Product</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Create a new product with rich variant details and structured metadata.
+          </p>
         </div>
 
-        {/* varieties */}
-        <div>
-          <h2 className="text-lg font-semibold mb-2">Varieties</h2>
-          {form.varients.map((v, vi) => (
-            <div key={v.colorID} className="border p-4 rounded mb-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Color Name
-                  </label>
-                  <input
-                    value={v.colorName}
-                    onChange={(e) =>
-                      updateVariety(vi, { colorName: e.target.value })
-                    }
-                    className="mt-1 block w-full border-gray-300 rounded p-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Color
-                  </label>
-                  <input
-                    value={v.colorCode}
-                    onChange={(e) => updateVariety(vi, { colorCode: e.target.value })}
-                    className="mt-1 block w-full h-10 border-gray-300 rounded p-2"
-                    type="color"
-                  />
-                </div>
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => addVarietyImage(vi)}
-                    className="mt-6 bg-gray-200 px-2 py-1 rounded"
-                  >
-                    + image
-                  </button>
-                </div>
+        <form onSubmit={handleSubmit} className="space-y-8 px-6 py-8 sm:px-10">
+          <section className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 shadow-sm">
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Product Name</label>
+                <input
+                  value={form.productName}
+                  onChange={(e) => handleChange("productName", e.target.value)}
+                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  required
+                />
               </div>
-              {/* img links */}
-              {v.imgLinks.map((img, ii) => (
-                <div key={ii} className="mt-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Image URL {ii + 1}
-                  </label>
-                  <input
-                    value={img}
-                    onChange={(e) =>
-                      updateVarietyImage(vi, ii, e.target.value)
-                    }
-                    className="mt-1 block w-full border-gray-300 rounded p-2"
-                  />
-                </div>
-              ))}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Brand</label>
+                <select
+                  value={form.brandId}
+                  onChange={(e) => handleChange("brandId", e.target.value)}
+                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  required
+                >
+                  <option value="">Select brand</option>
+                  {brandsList.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Category</label>
+                <select
+                  value={form.categoryId}
+                  onChange={(e) => handleChange("categoryId", e.target.value)}
+                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  required
+                >
+                  <option value="">Select category</option>
+                  {categoriesList.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Subcategory</label>
+                <select
+                  value={form.subcategoryId}
+                  onChange={(e) => handleChange("subcategoryId", e.target.value)}
+                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  required
+                >
+                  <option value="">Select subcategory</option>
+                  {subcategoriesList.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-semibold text-slate-700">Thumbnail URL</label>
+                <input
+                  value={form.thumbnail}
+                  onChange={(e) => handleChange("thumbnail", e.target.value)}
+                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-semibold text-slate-700">Location</label>
+                <input
+                  value={form.loc}
+                  onChange={(e) => handleChange("loc", e.target.value)}
+                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  placeholder="Enter location"
+                />
+              </div>
+            </div>
+          </section>
 
-              {/* sizes */}
-              <div className="mt-4">
-                <h3 className="font-medium">Sizes</h3>
-                {v.sizes.map((s, si) => (
-                  <div
-                    key={s.sizeID}
-                    className="grid grid-cols-1 md:grid-cols-6 gap-2 mt-2"
-                  >
-                    <div>
-                      <label className="text-xs font-medium text-gray-700">Size</label>
-                      <input
-                        placeholder="e.g. L"
-                        value={s.sizeName}
-                        onChange={(e) =>
-                          updateSize(vi, si, { sizeName: e.target.value })
-                        }
-                        className="border border-gray-300 rounded p-1 w-full"
-                      />
+          <section className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 shadow-sm">
+            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-900">Varieties</h2>
+                <p className="mt-1 text-sm text-slate-500">Add color variations, images, and sizes.</p>
+              </div>
+              <button
+                type="button"
+                onClick={addVariety}
+                className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
+              >
+                + Add Variety
+              </button>
+            </div>
+
+            {form.varients.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-5 py-6 text-sm text-slate-500">
+                No varieties yet. Add one to begin.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {form.varients.map((v, vi) => (
+                  <div key={v.colorID} className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="grid gap-4 md:grid-cols-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Color Name</label>
+                        <input
+                          value={v.colorName}
+                          onChange={(e) => updateVariety(vi, { colorName: e.target.value })}
+                          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-semibold text-slate-700">Color</label>
+                        <input
+                          value={v.colorCode}
+                          onChange={(e) => updateVariety(vi, { colorCode: e.target.value })}
+                          className="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                          type="color"
+                        />
+                      </div>
+                      <div className="flex items-end justify-start">
+                        <button
+                          type="button"
+                          onClick={() => addVarietyImage(vi)}
+                          className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+                        >
+                          + Image
+                        </button>
+                      </div>
+                      <div className="flex items-end justify-end">
+                        <button
+                          type="button"
+                          onClick={() => removeVariety(vi)}
+                          className="inline-flex items-center justify-center rounded-full border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100"
+                        >
+                          Remove Variety
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-xs font-medium text-gray-700">SKU</label>
-                      <input
-                        placeholder="SKU"
-                        value={s.sku}
-                        onChange={(e) =>
-                          updateSize(vi, si, { sku: e.target.value })
-                        }
-                        className="border border-gray-300 rounded p-1 w-full"
-                      />
+
+                    <div className="mt-5 space-y-3">
+                      {v.imgLinks.map((img, ii) => (
+                        <div key={ii} className="space-y-2">
+                          <label className="text-sm font-semibold text-slate-700">Image URL {ii + 1}</label>
+                          <input
+                            value={img}
+                            onChange={(e) => updateVarietyImage(vi, ii, e.target.value)}
+                            className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                          />
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <label className="text-xs font-medium text-gray-700">MRP</label>
-                      <input
-                        placeholder="Max Retail"
-                        type="number"
-                        value={s.mrp}
-                        onChange={(e) =>
-                          updateSize(vi, si, { mrp: Number(e.target.value) })
-                        }
-                        className="border border-gray-300 rounded p-1 w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-gray-700">Selling Price</label>
-                      <input
-                        placeholder="Sale Price"
-                        type="number"
-                        value={s.sellingPrice}
-                        onChange={(e) =>
-                          updateSize(vi, si, { sellingPrice: Number(e.target.value) })
-                        }
-                        className="border border-gray-300 rounded p-1 w-full"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-gray-700">Stock</label>
-                      <input
-                        placeholder="Quantity"
-                        type="number"
-                        value={s.stock}
-                        onChange={(e) =>
-                          updateSize(vi, si, { stock: Number(e.target.value) })
-                        }
-                        className="border border-gray-300 rounded p-1 w-full"
-                      />
+
+                    <div className="mt-6 rounded-[28px] border border-slate-200 bg-slate-50 p-4">
+                      <div className="mb-4 flex items-center justify-between gap-4">
+                        <h3 className="text-sm font-semibold text-slate-900">Sizes</h3>
+                        <button
+                          type="button"
+                          onClick={() => addSize(vi)}
+                          className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
+                        >
+                          + Size
+                        </button>
+                      </div>
+                      <div className="space-y-4">
+                        {v.sizes.map((s, si) => (
+                          <div key={s.sizeID} className="grid gap-3 md:grid-cols-7">
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">Size</label>
+                              <input
+                                placeholder="e.g. L"
+                                value={s.sizeName}
+                                onChange={(e) => updateSize(vi, si, { sizeName: e.target.value })}
+                                className="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">SKU</label>
+                              <input
+                                placeholder="SKU"
+                                value={s.sku}
+                                onChange={(e) => updateSize(vi, si, { sku: e.target.value })}
+                                className="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">MRP</label>
+                              <input
+                                placeholder="Max Retail"
+                                type="number"
+                                value={s.mrp}
+                                onChange={(e) => updateSize(vi, si, { mrp: Number(e.target.value) })}
+                                className="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">Selling</label>
+                              <input
+                                placeholder="Sale Price"
+                                type="number"
+                                value={s.sellingPrice}
+                                onChange={(e) => updateSize(vi, si, { sellingPrice: Number(e.target.value) })}
+                                className="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">Discount</label>
+                              <input
+                                placeholder="Auto calculated"
+                                type="number"
+                                value={s.discountPercent.toFixed(2)}
+                                readOnly
+                                className="w-full rounded-2xl border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-900 shadow-sm"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">Stock</label>
+                              <input
+                                placeholder="Quantity"
+                                type="number"
+                                value={s.stock}
+                                onChange={(e) => updateSize(vi, si, { stock: Number(e.target.value) })}
+                                className="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                              />
+                            </div>
+                            <div className="flex items-end justify-end">
+                              <button
+                                type="button"
+                                onClick={() => removeSize(vi, si)}
+                                className="inline-flex items-center justify-center rounded-full border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 shadow-sm">
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-900">Description</h2>
+                  <p className="mt-1 text-sm text-slate-500">Add product feature details and specifications.</p>
+                </div>
+                <div className="space-y-3">
+                  {form.desc.map((d, di) => (
+                    <div key={di} className="grid gap-3 sm:grid-cols-3">
+                      <input
+                        placeholder="Key"
+                        value={d.key}
+                        onChange={(e) => updateDesc(di, { key: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      />
+                      <input
+                        placeholder="Value"
+                        value={d.value}
+                        onChange={(e) => updateDesc(di, { value: e.target.value })}
+                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeDesc(di)}
+                        className="inline-flex items-center justify-center rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
                 <button
                   type="button"
-                  onClick={() => addSize(vi)}
-                  className="mt-2 bg-gray-200 px-2 py-1 rounded"
+                  onClick={addDesc}
+                  className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
                 >
-                  + size
+                  + Add Description
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-900">Tags</h2>
+                  <p className="mt-1 text-sm text-slate-500">Add search-friendly tags for this product.</p>
+                </div>
+                <div className="space-y-3">
+                  {form.tags.map((tag, ti) => (
+                    <div key={ti} className="flex gap-3">
+                      <input
+                        placeholder="Tag"
+                        value={tag}
+                        onChange={(e) => updateTag(ti, e.target.value)}
+                        className="flex-1 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeTag(ti)}
+                        className="inline-flex items-center justify-center rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={addTag}
+                  className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
+                >
+                  + Add Tag
                 </button>
               </div>
             </div>
-          ))}
-          <button
-            type="button"
-            onClick={addVariety}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Add Variety
-          </button>
-        </div>
+          </section>
 
-        {/* description */}
-        <div>
-          <h2 className="text-lg font-semibold mb-2">Description</h2>
-          {form.desc.map((d, di) => (
-            <div key={di} className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-              <input
-                placeholder="Key"
-                value={d.key}
-                onChange={(e) => updateDesc(di, { key: e.target.value })}
-                className="border-gray-300 rounded p-1"
-              />
-              <input
-                placeholder="Value"
-                value={d.value}
-                onChange={(e) => updateDesc(di, { value: e.target.value })}
-                className="border-gray-300 rounded p-1"
-              />
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={addDesc}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Add Description
-          </button>
-        </div>
-
-        {/* tags */}
-        <div>
-          <h2 className="text-lg font-semibold mb-2">Tags</h2>
-          {form.tags.map((tag, ti) => (
-            <div key={ti} className="mb-2">
-              <input
-                placeholder="Tag"
-                value={tag}
-                onChange={(e) => updateTag(ti, e.target.value)}
-                className="border-gray-300 rounded p-1 w-full"
-              />
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={addTag}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Add Tag
-          </button>
-        </div>
-
-        <div>
-          <button
-            type="submit"
-            className="bg-green-600 text-white px-6 py-2 rounded"
-          >
-            Submit
-          </button>
-        </div>
-      </form>
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-7 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-700"
+            >
+              Submit
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

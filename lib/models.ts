@@ -262,6 +262,18 @@ const checkoutSessionSchema = new Schema(
 
 checkoutSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
+// Media Model
+const MediaSchema = new Schema(
+  {
+    name: { type: String, required: true },
+    url: { type: String, required: true },
+    key: { type: String, required: true },
+    size: { type: Number, required: true },
+    type: { type: String, required: true },
+  },
+  { timestamps: true },
+);
+
 export const Brand = models.Brand || model("Brand", BrandSchema);
 export const Category = models.Category || model("Category", CategorySchema);
 export const Subcategory =
@@ -274,3 +286,4 @@ export const Order = models.Order || model("Order", OrderSchema);
 export const CheckoutSession =
   models.CheckoutSession || model("CheckoutSession", checkoutSessionSchema);
 export const Admin = models.Admin || model<IAdmin>("Admin", AdminSchema);
+export const Media = models.Media || model("Media", MediaSchema);
