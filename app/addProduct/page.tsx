@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import ImagePickerModal from "./_components/ImagePickerModal";
+import ImagePickerModal from "../_components/ImagePickerModal";
 
 // types matching schema
 interface Size {
