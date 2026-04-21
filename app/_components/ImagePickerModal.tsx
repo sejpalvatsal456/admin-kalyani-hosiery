@@ -134,11 +134,11 @@ export default function ImagePickerModal({
                   }`}
                 >
                   {/* Image Container */}
-                  <div className="aspect-square overflow-hidden bg-slate-100">
+                  <div className="overflow-hidden bg-slate-100">
                     <img
                       src={item.url}
                       alt={item.name}
-                      className="h-full w-full object-cover transition group-hover:scale-105"
+                      className="w-full object-cover transition group-hover:scale-105"
                     />
                   </div>
 

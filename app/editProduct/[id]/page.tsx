@@ -63,6 +63,10 @@ export default function EditProductPage() {
     { id: string; name: string }[]
   >([]);
   const [showImagePickerModal, setShowImagePickerModal] = useState(false);
+  const [editingImageIndices, setEditingImageIndices] = useState<{
+    varietyIndex: number;
+    imageLinkIndex: number;
+  } | null>(null);
   const [form, setForm] = useState<ProductInput>({
     brandId: "",
     productName: "",
@@ -189,6 +193,25 @@ export default function EditProductPage() {
       v[vIdx].imgLinks = imgs;
       return { ...f, varients: v };
     });
+  };
+
+  const openImagePickerForVariety = (vIdx: number, iIdx: number) => {
+    setEditingImageIndices({ varietyIndex: vIdx, imageLinkIndex: iIdx });
+    setShowImagePickerModal(true);
+  };
+
+  const handleImageSelection = (url: string) => {
+    if (editingImageIndices) {
+      updateVarietyImage(
+        editingImageIndices.varietyIndex,
+        editingImageIndices.imageLinkIndex,
+        url
+      );
+      setEditingImageIndices(null);
+    } else {
+      handleChange("thumbnail", url);
+    }
+    setShowImagePickerModal(false);
   };
 
   const addSize = (vIdx: number) => {
@@ -502,12 +525,39 @@ export default function EditProductPage() {
                     <div className="mt-5 space-y-3">
                       {v.imgLinks.map((img, ii) => (
                         <div key={ii} className="space-y-2">
-                          <label className="text-sm font-semibold text-slate-700">Image URL {ii + 1}</label>
-                          <input
-                            value={img}
-                            onChange={(e) => updateVarietyImage(vi, ii, e.target.value)}
-                            className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                          />
+                          <label className="text-sm font-semibold text-slate-700">Image {ii + 1}</label>
+                          <div className="flex gap-4 items-start">
+                            {/* Image Preview */}
+                            {img && (
+                              <div className="w-40 overflow-hidden rounded-2xl border border-slate-300 bg-white flex-shrink-0">
+                                <img
+                                  src={img}
+                                  alt={`Image ${ii + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
+                            
+                            {/* Action Buttons */}
+                            <div className="flex flex-col gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openImagePickerForVariety(vi, ii)}
+                                className="inline-flex items-center justify-center rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100"
+                              >
+                                {img ? "Change Image" : "Select Image"}
+                              </button>
+                              {img && (
+                                <button
+                                  type="button"
+                                  onClick={() => updateVarietyImage(vi, ii, "")}
+                                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
+                                >
+                                  Clear
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -697,9 +747,12 @@ export default function EditProductPage() {
       {/* Image Picker Modal */}
       <ImagePickerModal
         isOpen={showImagePickerModal}
-        onClose={() => setShowImagePickerModal(false)}
-        onSelect={(url: string) => handleChange("thumbnail", url)}
-        selectedImageUrl={form.thumbnail}
+        onClose={() => {
+          setShowImagePickerModal(false);
+          setEditingImageIndices(null);
+        }}
+        onSelect={handleImageSelection}
+        selectedImageUrl={editingImageIndices ? form.varients[editingImageIndices.varietyIndex]?.imgLinks[editingImageIndices.imageLinkIndex] : form.thumbnail}
       />
     </div>
   );
