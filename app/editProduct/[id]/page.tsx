@@ -388,35 +388,37 @@ export default function EditProductPage() {
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-semibold text-slate-700">Thumbnail</label>
                 
-                {/* Thumbnail Preview */}
-                {form.thumbnail && (
-                  <div className="mb-4 overflow-hidden rounded-2xl border border-slate-300 bg-white">
-                    <img
-                      src={form.thumbnail}
-                      alt="Thumbnail preview"
-                      className="h-48 w-full object-cover"
-                    />
-                  </div>
-                )}
-                
-                {/* Action Buttons */}
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowImagePickerModal(true)}
-                    className="flex-1 inline-flex items-center justify-center rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100"
-                  >
-                    {form.thumbnail ? "Change Image" : "Select Image"}
-                  </button>
+                <div className="flex gap-4 items-start">
+                  {/* Thumbnail Preview */}
                   {form.thumbnail && (
+                    <div className="w-40 overflow-hidden rounded-2xl border border-slate-300 bg-white flex-shrink-0">
+                      <img
+                        src={form.thumbnail}
+                        alt="Thumbnail preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  
+                  {/* Action Buttons */}
+                  <div className="flex flex-col gap-2">
                     <button
                       type="button"
-                      onClick={() => handleChange("thumbnail", "")}
-                      className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
+                      onClick={() => setShowImagePickerModal(true)}
+                      className="inline-flex items-center justify-center rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100"
                     >
-                      Clear
+                      {form.thumbnail ? "Change Image" : "Select Image"}
                     </button>
-                  )}
+                    {form.thumbnail && (
+                      <button
+                        type="button"
+                        onClick={() => handleChange("thumbnail", "")}
+                        className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="space-y-2 md:col-span-2">
