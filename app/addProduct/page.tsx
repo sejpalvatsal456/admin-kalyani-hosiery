@@ -355,10 +355,10 @@ export default function AddProductPage() {
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-semibold text-slate-700">Thumbnail</label>
                 
-                <div className="flex gap-4 items-start">
+                <div className="flex gap-4 items-center md:items-start flex-col md:flex-row">
                   {/* Thumbnail Preview */}
                   {form.thumbnail && (
-                    <div className="w-40 aspect-square overflow-hidden rounded-2xl border border-slate-300 bg-white flex-shrink-0">
+                    <div className="w-40 overflow-hidden rounded-2xl border border-slate-300 bg-white flex-shrink-0">
                       <img
                         src={form.thumbnail}
                         alt="Thumbnail preview"
@@ -372,7 +372,7 @@ export default function AddProductPage() {
                     <button
                       type="button"
                       onClick={() => setShowImagePickerModal(true)}
-                      className="inline-flex items-center justify-center rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100"
+                      className="w-40 inline-flex items-center justify-center rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100"
                     >
                       {form.thumbnail ? "Change Image" : "Select Image"}
                     </button>
@@ -380,7 +380,7 @@ export default function AddProductPage() {
                       <button
                         type="button"
                         onClick={() => handleChange("thumbnail", "")}
-                        className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
+                        className="w-40 inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
                       >
                         Clear
                       </button>
@@ -423,7 +423,7 @@ export default function AddProductPage() {
               <div className="space-y-4">
                 {form.varients.map((v, vi) => (
                   <div key={v.colorID} className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-                    <div className="grid gap-4 md:grid-cols-4">
+                    <div className="grid gap-4 md:grid-cols-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <label className="text-sm font-semibold text-slate-700">Color Name</label>
                         <input
@@ -461,11 +461,11 @@ export default function AddProductPage() {
                       </div>
                     </div>
 
-                    <div className="mt-5 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {v.imgLinks.map((img, ii) => (
                         <div key={ii} className="space-y-2">
                           <label className="text-sm font-semibold text-slate-700">Image {ii + 1}</label>
-                          <div className="flex gap-4 items-start">
+                          <div className="flex flex-col gap-3 items-start">
                             {/* Image Preview */}
                             {img && (
                               <div className="w-40 overflow-hidden rounded-2xl border border-slate-300 bg-white flex-shrink-0">
@@ -478,7 +478,7 @@ export default function AddProductPage() {
                             )}
                             
                             {/* Action Buttons */}
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-2 w-full">
                               <button
                                 type="button"
                                 onClick={() => openImagePickerForVariety(vi, ii)}
@@ -514,7 +514,7 @@ export default function AddProductPage() {
                       </div>
                       <div className="space-y-4">
                         {v.sizes.map((s, si) => (
-                          <div key={s.sizeID} className="grid gap-3 md:grid-cols-7">
+                          <div key={s.sizeID} className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
                             <div className="space-y-2">
                               <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">Size</label>
                               <input
@@ -601,7 +601,7 @@ export default function AddProductPage() {
                 </div>
                 <div className="space-y-3">
                   {form.desc.map((d, di) => (
-                    <div key={di} className="grid gap-3 sm:grid-cols-3">
+                    <div key={di} className="py-2 grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
                       <input
                         placeholder="Key"
                         value={d.key}
@@ -640,7 +640,7 @@ export default function AddProductPage() {
                 </div>
                 <div className="space-y-3">
                   {form.tags.map((tag, ti) => (
-                    <div key={ti} className="flex gap-3">
+                    <div key={ti} className="flex flex-col md:flex-row gap-3 py-2">
                       <input
                         placeholder="Tag"
                         value={tag}
