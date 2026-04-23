@@ -111,12 +111,6 @@ export default function CategoryPage() {
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      ID
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
                       Name
                     </th>
                     <th
@@ -130,9 +124,6 @@ export default function CategoryPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {categories.map((c) => (
                     <tr key={c.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {c.id}
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {c.name}
                       </td>
