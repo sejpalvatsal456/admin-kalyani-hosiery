@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import ImagePickerModal from "../_components/ImagePickerModal";
 
 
 
@@ -16,6 +17,11 @@ type Category = { id: string; name: string };
 
 const placeholder = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect fill='%23e5e7eb' width='100%25' height='100%25'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%236b7280' font-size='20'>No Image</text></svg>";
 
+/*
+
+In the Subcategory page, there is a field of logo URL, there should be select image that shoulb have same mechanism as the thumbnail field in the addProduct page. It should bbe clear by defaullt,the select Image is clicke, it opens a modal that shows all the ploaded images on the aws s3 bugket /media folder. If any one of the is clicked it gets selected and then we should clicked on the select image button on the modal to finalise the selection and close the modal.  and save the distributive CDn link to logoURL firld of items, in both mode add and edit subcategory.
+
+*/
 
 export default function SubcategoryPage() {
   const [name, setName] = useState("");
@@ -24,6 +30,7 @@ export default function SubcategoryPage() {
   const [items, setItems] = useState<Subcategory[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showImagePickerModal, setShowImagePickerModal] = useState(false);
 
   const getCategory = (subId: string, ) => {
 
@@ -161,16 +168,54 @@ export default function SubcategoryPage() {
             </div>
             <div>
               <label className="block text-xs sm:text-sm font-medium text-gray-700">Logo URL</label>
-              <input
-                value={logoLink}
-                onChange={(e) => setlogoLink(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                placeholder="Logo Url..."
-                required
-              />
+              <div className="mt-1 flex flex-col justify-between gap-3">
+                
+                <div className="flex flex-col sm:items-center gap-3">
+                  <input
+                    type="hidden"
+                    value={logoLink}
+                    // onChange={(e) => setlogoLink(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowImagePickerModal(true)}
+                    className="w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition"
+                  >
+                    {logoLink ? "Change Image" : "Select Image"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setlogoLink("")}
+                    className="w-full inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 transition"
+                  >
+                    Clear Image
+                  </button>
+                </div>
+
+                {logoLink ? (
+                  <div className="w-30 overflow-hidden self-center rounded-lg border border-gray-300 bg-white">
+                    <img
+                      src={logoLink}
+                      alt="Selected logo"
+                      className="h-full object-cover"
+                      onError={(e) => {
+                        const targ = e.currentTarget as HTMLImageElement;
+                        targ.src = placeholder;
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full h-24 overflow-hidden rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center px-5 justify-center text-gray-500 text-xs">
+                    No image selected
+                  </div>
+                )}
+                
+              </div>
             </div>
-            <div className="pt-2">
-              <button className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-medium">
+            <div className="pt-2 flex justify-center">
+              <button className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-medium">
                 {editingId !== null ? 'Update Subcategory' : 'Add Subcategory'}
               </button>
             </div>
@@ -246,6 +291,7 @@ export default function SubcategoryPage() {
                               setEditingId(it.id);
                               setName(it.name);
                               setCategoryId(it.categoryId);
+                              setlogoLink(it.logoLink || "");
                             }}
                             className="text-blue-600 hover:underline mr-2"
                           >
@@ -265,6 +311,7 @@ export default function SubcategoryPage() {
                                   setEditingId(null);
                                   setName("");
                                   setCategoryId(categories[0]?.id || "");
+                                  setlogoLink("");
                                 }
                               } else {
                                 const d = await res.json();
@@ -286,6 +333,16 @@ export default function SubcategoryPage() {
           </div>
         </section>
       </div>
+
+      <ImagePickerModal
+        isOpen={showImagePickerModal}
+        onClose={() => setShowImagePickerModal(false)}
+        onSelect={(url) => {
+          setlogoLink(url);
+          setShowImagePickerModal(false);
+        }}
+        selectedImageUrl={logoLink}
+      />
     </div>
   );
 }
