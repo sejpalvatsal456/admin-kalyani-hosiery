@@ -4,19 +4,21 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 
 interface Size {
-  id: string;
-  size: string;
+  sizeID: string;
+  sku: string;
+  sizeName: string;
   mrp: number;
   sellingPrice: number;
+  discountPercent: number;
   stock: number;
 }
 
 interface Variety {
-  id: string;
+  colorID: string;
   colorName: string;
-  color: string;
+  colorCode: string; // Starts with #, max 7 chars
   imgLinks: string[];
-  sizes: Size[];
+  sizes: Size[]; // Minimum 1 element
 }
 
 interface Desc {
@@ -26,13 +28,18 @@ interface Desc {
 
 interface Product {
   _id: string;
-  brandId: { _id: string; name: string; logo: string };
   productName: string;
-  categoryId: { _id: string; name: string };
-  subcategoryId: { _id: string; categoryId: string;name: string; };
+  slug: string;
+  categoryId: { _id: string, name: string };
+  subcategoryId: { _id: string, name: string };
+  brandId: { _id: string, brandName: string };
   thumbnail: string;
-  variety: Variety[];
+  tags: string[];
+  varients: Variety[];
   desc: Desc[];
+  loc: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // FIXME: Solve the error here
@@ -98,18 +105,18 @@ export default function ProductPage() {
               <img
                 src={p.thumbnail}
                 alt={p.productName}
-                className="w-full h-40 object-cover rounded mb-4"
+                className="w-full object-cover rounded mb-4"
               />
               <h2 className="text-lg font-semibold mb-2">{p.productName}</h2>
-              <div className="text-sm text-gray-600 mb-1">Brand: {p.brandId.name}</div>
+              <div className="text-sm text-gray-600 mb-1">Brand: {p.brandId.brandName}</div>
               <div className="text-sm text-gray-600 mb-1">
                 Category: {p.categoryId.name}
               </div>
               <div className="text-sm text-gray-600 mb-1">
-                First color: {p.variety[0]?.colorName || '-'}
+                First color: {p.varients[0]?.colorName || '-'}
               </div>
               <div className="text-sm text-gray-600 mb-3">
-                Starting price: ₹{startingPrice(p.variety)}
+                Starting price: ₹{startingPrice(p.varients)}
               </div>
               <div className="flex gap-2">
                 <Link
@@ -133,9 +140,9 @@ export default function ProductPage() {
 
       <Link
         href="/addProduct"
-        className="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700"
+        className="fixed flex justify-center items-center bottom-6 right-6 bg-blue-600 text-white w-15 h-15 rounded-full shadow-lg hover:bg-blue-700"
       >
-        +
+        <span className="text-4xl font-medium">+</span>
       </Link>
     </div>
   );

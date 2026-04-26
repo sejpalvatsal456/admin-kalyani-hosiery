@@ -2,6 +2,15 @@ import { connectDB } from "@/lib/connectDB";
 import { Product } from "@/lib/models";
 import { NextRequest, NextResponse } from "next/server";
 
+const getSlug = (name: string): string => {
+  return name
+    .toLowerCase()                   // Convert to lowercase
+    .trim()                          // Remove whitespace from both ends
+    .replace(/[^\w\s-]/g, '')       // Remove all non-word characters (except spaces and hyphens)
+    .replace(/[\s_-]+/g, '_')        // Replace spaces, underscores, or hyphens with a single underscore
+    .replace(/^-+|-+$/g, '');        // Remove leading or trailing underscores/hyphens
+};
+
 // GET: list or single product (populated)
 export const GET = async (req: NextRequest) => {
   try {
@@ -16,7 +25,7 @@ export const GET = async (req: NextRequest) => {
       return NextResponse.json(prod, { status: 200 });
     }
     const prods = await Product.find({})
-      .populate("brandId", "name")
+      .populate("brandId", "brandName")
       .populate("categoryId", "name")
       .populate("subcategoryId", "name");
     return NextResponse.json(prods, { status: 200 });
@@ -37,7 +46,7 @@ export const POST = async (req: NextRequest) => {
       return NextResponse.json({ msg: "Missing required fields" }, { status: 400 });
     }
 
-    const created = await Product.create(data);
+    const created = await Product.create({...data, slug: getSlug(data.productName) });
     return NextResponse.json(created, { status: 200 });
   } catch (error) {
     console.log(error);
@@ -50,9 +59,9 @@ export const PATCH = async (req: NextRequest) => {
   try {
     await connectDB();
     const body = await req.json();
-    const { id, ...updates } = body;
-    if (!id) return NextResponse.json({ msg: "id is required" }, { status: 400 });
-    const prod = await Product.findById(id);
+    const { _id, ...updates } = body;
+    if (!_id) return NextResponse.json({ msg: "id is required" }, { status: 400 });
+    const prod = await Product.findById(_id);
     if (!prod) return NextResponse.json({ msg: "Product not found" }, { status: 404 });
     Object.assign(prod, updates);
     await prod.save();

@@ -1,27 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "../../../../lib/connectDB";
-import { User } from "../../../../lib/models";
+import { Admin, User } from "../../../../lib/models";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password } = body as { email: string; password: string };
+    const { username, password } = body as { username: string; password: string };
 
-    if (!email || !password) {
+    if (!username || !password) {
       return NextResponse.json({ error: "Missing credentials" }, { status: 400 });
     }
 
     await connectDB();
-    const user = await User.findOne({ email });
-    if (!user) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+    const admin = await Admin.findOne({ username });
+    if (!admin) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
 
-    const match = await bcrypt.compare(password, user.hashedPassword);
+    const match = await bcrypt.compare(password, admin.hashedPassword);
     if (!match) return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
 
     const token = jwt.sign(
-      { id: user._id.toString(), role: user.role, email: user.email },
+      { id: admin._id.toString(), name: admin.username, role: "admin" },
       process.env.JWT_SECRET as string,
       { expiresIn: "1h" }
     );

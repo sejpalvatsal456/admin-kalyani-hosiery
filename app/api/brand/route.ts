@@ -34,13 +34,16 @@ export const PATCH = async (req: NextRequest) => {
     const authErr = await requireAdmin(req);
     if (authErr) return authErr;
     await connectDB();
-    const { id, name, logo } = await req.json() as {
+    const { id, brandName, brandLogo } = await req.json() as {
       id: string;
-      name: string;
-      logo: string;
+      brandName: string;
+      brandLogo: string;
     };
 
-    if (!id || name === '' || logo === '')
+    console.log(brandName);
+    console.log(brandLogo);
+
+    if (!id || brandName === '' || brandLogo === '')
       return NextResponse.json(
         { msg: 'id, name and logo should be non empty' },
         { status: 500 }
@@ -54,17 +57,20 @@ export const PATCH = async (req: NextRequest) => {
       );
 
     // check for duplicate name if changing name
-    if (brand.name !== name) {
-      const conflict = await Brand.findOne({ name });
+    if (brand.brandName !== brandName) {
+      const conflict = await Brand.findOne({ brandName });
       if (conflict)
+      {
+        console.log(conflict)  
         return NextResponse.json(
           { msg: 'Another brand with this name exists' },
           { status: 409 }
         );
+      }
     }
 
-    brand.name = name;
-    brand.logo = logo;
+    brand.brandName = brandName;
+    brand.logo = brandLogo;
     await brand.save();
 
     return NextResponse.json({ brand }, { status: 200 });
@@ -112,20 +118,24 @@ export const POST = async(req:NextRequest) => {
     const authErr = await requireAdmin(req);
     if (authErr) return authErr;
     await connectDB();
-    const { name, logo } = await req.json() as { name: string, logo: string };
+    const { brandName, brandLogo } = await req.json() as { brandName: string, brandLogo: string };
 
-    if (name === '' || logo === '') return NextResponse.json(
+    console.log(brandName);
+    console.log(brandLogo);
+
+
+    if (brandName === '' || brandLogo === '') return NextResponse.json(
       { msg : "name and logo should be non empty string" }, 
       { status: 500 }
     );
 
-    const oldBrand = await Brand.findOne({ name: name });
+    const oldBrand = await Brand.findOne({ brandName: brandName });
     if(oldBrand) return NextResponse.json(
       { msg: "Brand with this name exist." },
       { status: 409 }
     );
 
-    const brand = await Brand.create({ name, logo });
+    const brand = await Brand.create({ brandName, brandLogo });
     if(!brand) return NextResponse.json(
       { msg: "Error in creation of brand" },
       { status: 500 }

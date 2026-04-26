@@ -11,9 +11,11 @@ export default function Navbar() {
     { label: 'Category', href: '/category' },
     { label: 'Subcategory', href: '/subcategory' },
     { label: 'Product', href: '/product' },
-    { label: 'Sale Products', href: '/sale-products' },
-    { label: 'Popular Products', href: '/popular-products' },
-    { label: 'Reels/Banner', href: '/reels-banner' },
+    { label: 'Orders', href: '/orders' },
+    { label: 'Media', href: '/media' },
+    // { label: 'Sale Products', href: '/sale-products' },
+    // { label: 'Popular Products', href: '/popular-products' },
+    // { label: 'Reels/Banner', href: '/reels-banner' },
   ];
 
   const sidebar = (

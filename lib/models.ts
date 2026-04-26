@@ -1,141 +1,290 @@
 import { model, models, Schema, Types } from "mongoose";
 
-const BrandSchema = new Schema(
+// --- Sub-Schemas ---
+
+const AddressSchema = new Schema(
   {
-    name: { type: String, required: true, trim: true },
-    logo: { type: String, required: true, trim: true },
+    house: { type: String, required: true },
+    street: { type: String, required: true },
+    area: { type: String, required: true },
+    city: { type: String, required: true },
+    state: { type: String, required: true },
+    pincode: { type: String, required: true },
   },
-  { timestamps: true },
+  { _id: false },
 );
 
-export const Brand = models.Brand || model("Brand", BrandSchema);
+const CartSchema = new Schema(
+  {
+    productId: { type: Types.ObjectId, ref: "Product", required: true },
+    colorId: { type: String, required: true },
+    sizeId: { type: String, required: true },
+    sku: { type: String, required: true },
+    quantity: { type: Number, required: true, min: 1 },
+  },
+  { _id: false },
+);
 
 const SizeSchema = new Schema(
   {
-    id: { type: String, required: true, trim: true },
-    size: { type: String, required: true, trim: true },
-    mrp: { type: Number, required: true, min: 0 },
-    sellingPrice: { type: Number, required: true, min: 0 },
-    stock: { type: Number, required: true, min: 0 },
+    sizeID: { type: String, required: true },
+    sku: { type: String, required: true },
+    sizeName: { type: String, required: true },
+    mrp: { type: Number, required: true },
+    sellingPrice: { type: Number, required: true },
+    discountPercent: { type: Number, required: true },
+    stock: { type: Number, default: 0 },
   },
   { _id: false },
 );
 
 const VarietySchema = new Schema(
   {
-    id: { type: String, required: true, trim: true },
-    colorName: { type: String, required: true, trim: true },
-    color: { type: String, required: true, trim: true },
-    imgLinks: { type: [String], required: true },
-    sizes: { type: [SizeSchema], required: true },
+    colorID: { type: String, required: true },
+    colorName: { type: String, required: true },
+    colorCode: {
+      type: String,
+      required: true,
+      maxlength: 7,
+      match: /^#/,
+    },
+    imgLinks: { type: [String], default: [] },
+    sizes: {
+      type: [SizeSchema],
+      validate: [
+        (val: any[]) => val.length >= 1,
+        "Must have at least one size",
+      ],
+    },
   },
   { _id: false },
 );
 
-const DescriptionSchema = new Schema(
-  {
-    key: { type: String, required: true, trim: true },
-    value: { type: String, required: true, trim: true },
-  },
-  { _id: false },
-);
+// --- Main Models ---
 
-const CategorySchema = new Schema(
+// User Model
+const UserSchema = new Schema(
   {
-    name: { type: String, required: true, unique: true, trim: true },
+    name: { type: String, required: true },
+    phone: { type: String, required: true, unique: true },
+    email: { type: String, unique: true, default: "" },
+    address: { type: String, default: null },
+    hashedPassword: { type: String, required: true },
+    cart: { type: [CartSchema], default: [] },
+    orders: [{ type: [Types.ObjectId], ref: "Order" }],
   },
   { timestamps: true },
 );
 
-export const Category = models.Category || model("Category", CategorySchema);
+export interface IAdmin extends Document {
+  username: string;
 
-const SubcategorySchema = new Schema(
+  hashedPassword: string;
+
+  permissions: string[];
+
+  lastLogin?: Date;
+
+  createdBy?: Types.ObjectId;
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const AdminSchema = new Schema<IAdmin>(
   {
-    name: {
+    username: {
       type: String,
       required: true,
       trim: true,
     },
 
-    categoryId: {
-      type: Types.ObjectId,
-      ref: "Category",
+    hashedPassword: {
+      type: String,
       required: true,
     },
-  },
-  { timestamps: true },
-);
 
-// Prevent duplicate subcategories under same category
-SubcategorySchema.index({ name: 1, categoryId: 1 }, { unique: true });
-
-export const Subcategory =
-  models.Subcategory || model("Subcategory", SubcategorySchema);
-
-const ProductSchema = new Schema(
-  {
-    brandId: { type: Types.ObjectId, ref: "Brand", required: true },
-    productName: { type: String, required: true, trim: true },
-    categoryId: { type: Types.ObjectId, ref: "Category", required: true },
-    subcategoryId: { type: Types.ObjectId, ref: "Subcategory", required: true },
-    thumbnail: { type: String, required: true },
-    variety: { type: [VarietySchema], required: true },
-    desc: { type: [DescriptionSchema], required: true },
-  },
-  { timestamps: true },
-);
-
-export const Product = models.Product || model("Product", ProductSchema);
-
-const UserSchema = new Schema(
-  {
-    name: { type: String, required: true, trim: true },
-    email: { type: String, trim: true },
-    role: { type: String, enum: ["user", "admin"], required: true },
-    phone: { type: Number, required: true },
-    hashedPassword: { type: String, required: true },
-    address: { type: String, trim: true },
-    cart: {
-      type: [
-        {
-          productId: { type: Types.ObjectId, ref: "Product", required: true },
-          sizeId: String,
-          colorId: String,
-        },
-      ],
-      required: true,
-      ref: "Product",
-    },
-  },
-  { timestamps: true },
-);
-
-export const User = models.User || model("User", UserSchema);
-
-const OrderSchema = new Schema(
-  {
-    userId: { type: Types.ObjectId, required: true, ref: "User" },
-    items: [
+    permissions: [
       {
-        productId: { type: Types.ObjectId, ref: "Product", required: true },
-        name: String,
-        color: String,
-        size: String,
-        price: Number,
-        quantity: Number,
+        type: String,
       },
     ],
-    totalAmount: { type: Number, required: true },
-    razorpayOrderId: String,
-    razorpayPaymentId: String,
-    razorpaySignature: String,
-    status: {
-      type: String,
-      enum: ["created", "paid", "failed"],
-      default: "created",
+
+    lastLogin: {
+      type: Date,
+    },
+
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "Admin",
     },
   },
   { timestamps: true },
 );
 
-export const Order = models.Order || model("Order", OrderSchema); 
+// Category Model
+const CategorySchema = new Schema(
+  {
+    name: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
+    theme: { type: String, required: true },
+    order: { type: Number, required: true },
+  },
+  { timestamps: true },
+);
+
+// Subcategory Model
+const SubcategorySchema = new Schema(
+  {
+    name: { type: String, required: true },
+    categoryId: { type: Types.ObjectId, ref: "Category", required: true },
+    slug: { type: String, required: true, slug: true },
+    logoLink: { type: String, required: true },
+  },
+  { timestamps: true },
+);
+
+const BrandSchema = new Schema(
+  {
+    brandName: { type: String, required: true },
+    brandLogo: { type: String, required: true },
+  },
+  { timestamps: true },
+);
+
+const DescriptionSchema = new Schema(
+  {
+    key: { type: String, required: true },
+    value: { type: String, required: true },
+  },
+  { _id: false },
+);
+
+// Product Model
+const ProductSchema = new Schema(
+  {
+    productName: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
+    categoryId: { type: Types.ObjectId, ref: "Category", required: true },
+    subcategoryId: { type: Types.ObjectId, ref: "Subcategory", required: true },
+    brandId: { type: Types.ObjectId, ref: "Brand", required: true },
+    thumbnail: { type: String, required: true },
+    tags: { type: [String], default: [] },
+    varients: { type: [VarietySchema], default: [] },
+    desc: {
+      type: [DescriptionSchema],
+      default: [],
+    },
+    loc: { type: String, required: true },
+  },
+  { timestamps: true },
+);
+
+// Transaction Model
+const TransactionSchema = new Schema(
+  {
+    userId: { type: Types.ObjectId, ref: "User", required: true },
+    transactionId: { type: String, required: true, unique: true },
+    merchantId: { type: String, required: true },
+    items: {
+      type: [CartSchema],
+      validate: [
+        (val: any[]) => val.length >= 1,
+        "Order must contain at least one item",
+      ],
+    },
+    amount: { type: Number, required: true, min: 0 },
+    status: {
+      type: String,
+      enum: ["PENDING", "COMPLETED", "FAILED"],
+      default: "PENDING",
+    },
+    initiatedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    completedAt: Date,
+  },
+  { timestamps: true },
+);
+
+// Order Model
+const OrderSchema = new Schema(
+  {
+    userId: { type: Types.ObjectId, ref: "User", required: true },
+    items: {
+      type: [CartSchema],
+      validate: [
+        (val: any[]) => val.length >= 1,
+        "Order must contain at least one item",
+      ],
+    },
+    shippingAddress: { type: String },
+    totalAmount: { type: Number, required: true, default: 0 },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "paid", "failed", "refunded"],
+      default: "pending",
+    },
+    orderStatus: {
+      type: String,
+      enum: ["pending", "placed", "processing", "delivered", "cancelled"],
+      default: "pending",
+    },
+  },
+  { timestamps: true },
+);
+
+const checkoutSessionSchema = new Schema(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+    },
+    items: {
+      type: [CartSchema],
+      validate: [
+        (val: any[]) => val.length >= 1,
+        "Order must contain at least one item",
+      ],
+    },
+    status: {
+      type: String,
+      enum: ["ACTIVE", "COMPLETED", "EXPIRED"],
+      default: "ACTIVE",
+    },
+    expiresAt: {
+      type: Date,
+      default: () => new Date(Date.now() + 10 * 60 * 1000), // 10 min
+    },
+  },
+  { timestamps: true },
+);
+
+checkoutSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+// Media Model
+const MediaSchema = new Schema(
+  {
+    name: { type: String, required: true },
+    url: { type: String, required: true },
+    key: { type: String, required: true },
+    size: { type: Number, required: true },
+    type: { type: String, required: true },
+  },
+  { timestamps: true },
+);
+
+export const Brand = models.Brand || model("Brand", BrandSchema);
+export const Category = models.Category || model("Category", CategorySchema);
+export const Subcategory =
+  models.Subcategory || model("Subcategory", SubcategorySchema);
+export const User = models.User || model("User", UserSchema);
+export const Product = models.Product || model("Product", ProductSchema);
+export const Transaction =
+  models.Transaction || model("Transaction", TransactionSchema);
+export const Order = models.Order || model("Order", OrderSchema);
+export const CheckoutSession =
+  models.CheckoutSession || model("CheckoutSession", checkoutSessionSchema);
+export const Admin = models.Admin || model<IAdmin>("Admin", AdminSchema);
+export const Media = models.Media || model("Media", MediaSchema);
