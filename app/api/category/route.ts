@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const GET = async (req: NextRequest) => {
   try {
     await connectDB();
-    const cats = await Category.find({});
+    const cats = await Category.find({}).sort({ order: 1 });
     return NextResponse.json({ categories: cats }, { status: 200 });
   } catch (error) {
     console.log(error);
@@ -21,11 +21,18 @@ export const GET = async (req: NextRequest) => {
 export const POST = async (req: NextRequest) => {
   try {
     await connectDB();
-    const { name } = (await req.json()) as { name: string };
+    const { name, order } = (await req.json()) as { name: string; order: number };
 
     if (!name || name.trim() === "") {
       return NextResponse.json(
         { msg: "name should be non empty string" },
+        { status: 500 }
+      );
+    }
+
+    if (typeof order !== 'number' || order < 1) {
+      return NextResponse.json(
+        { msg: "order must be a positive number" },
         { status: 500 }
       );
     }
@@ -38,7 +45,7 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    const cat = await Category.create({ name: name.trim() });
+    const cat = await Category.create({ name: name.trim(), order });
     return NextResponse.json({ category: cat }, { status: 200 });
   } catch (error) {
     console.log(error);
@@ -53,10 +60,17 @@ export const POST = async (req: NextRequest) => {
 export const PATCH = async (req: NextRequest) => {
   try {
     await connectDB();
-    const { id, name } = (await req.json()) as { id: string; name: string };
+    const { id, name, order } = (await req.json()) as { id: string; name: string; order?: number };
     if (!id || !name || name.trim() === "") {
       return NextResponse.json(
         { msg: "id and name must be provided" },
+        { status: 500 }
+      );
+    }
+
+    if (order !== undefined && (typeof order !== 'number' || order < 1)) {
+      return NextResponse.json(
+        { msg: "order must be a positive number" },
         { status: 500 }
       );
     }
@@ -77,6 +91,9 @@ export const PATCH = async (req: NextRequest) => {
     }
 
     cat.name = name.trim();
+    if (order !== undefined) {
+      cat.order = order;
+    }
     await cat.save();
     return NextResponse.json({ category: cat }, { status: 200 });
   } catch (error) {

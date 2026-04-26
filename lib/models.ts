@@ -128,6 +128,7 @@ const CategorySchema = new Schema(
     name: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
     theme: { type: String, required: true },
+    order: { type: Number, required: true },
   },
   { timestamps: true },
 );

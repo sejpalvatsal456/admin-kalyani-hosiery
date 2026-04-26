@@ -5,27 +5,29 @@ import React, { useState, useEffect } from "react";
 type Category = {
   id: string;
   name: string;
+  order: number;
 };
 
 export default function CategoryPage() {
   const [name, setName] = useState("");
+  const [order, setOrder] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || !order.trim()) return;
     if (editingId !== null) {
       // send patch request
       const res = await fetch('/api/category', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: editingId, name: name.trim() }),
+        body: JSON.stringify({ id: editingId, name: name.trim(), order: parseInt(order) }),
       });
       const data = await res.json();
       if (res.ok) {
         setCategories((prev) =>
-          prev.map((c) => (c.id === editingId ? { ...c, name: name.trim() } : c))
+          prev.map((c) => (c.id === editingId ? { ...c, name: name.trim(), order: parseInt(order) } : c)).sort((a, b) => a.order - b.order)
         );
       } else {
         alert('Failed to update category');
@@ -36,20 +38,23 @@ export default function CategoryPage() {
       const res = await fetch('/api/category', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim() }),
+        body: JSON.stringify({ name: name.trim(), order: parseInt(order) }),
       });
       const data = await res.json();
       if (res.ok) {
-        setCategories((prev) => [
-          { id: data.category._id, name: data.category.name },
-          ...prev,
-        ]);
+        setCategories((prev) =>
+          [
+            { id: data.category._id, name: data.category.name, order: data.category.order },
+            ...prev,
+          ].sort((a, b) => a.order - b.order)
+        );
       } else {
         alert('Failed to create category');
         console.error(data.msg);
       }
     }
     setName("");
+    setOrder("");
   }
 
   // load categories from backend
@@ -60,7 +65,7 @@ export default function CategoryPage() {
         const data = await res.json();
         if (res.ok) {
           setCategories(
-            data.categories.map((c: any) => ({ id: c._id, name: c.name }))
+            data.categories.map((c: any) => ({ id: c._id, name: c.name, order: c.order }))
           );
         } else {
           console.error('Failed to fetch categories', data.msg);
@@ -90,6 +95,18 @@ export default function CategoryPage() {
                 required
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Order</label>
+              <input
+                type="number"
+                value={order}
+                onChange={(e) => setOrder(e.target.value)}
+                className="mt-1 block w-full border-gray-300 rounded p-2"
+                placeholder="Display order (e.g., 1, 2, 3)"
+                required
+                min="1"
+              />
+            </div>
             <div className="pt-2">
               <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
                 {editingId !== null ? 'Update Category' : 'Add Category'}
@@ -111,6 +128,12 @@ export default function CategoryPage() {
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
+                      Order
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Name
                     </th>
                     <th
@@ -125,6 +148,9 @@ export default function CategoryPage() {
                   {categories.map((c) => (
                     <tr key={c.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {c.order}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {c.name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -132,6 +158,7 @@ export default function CategoryPage() {
                           onClick={() => {
                             setEditingId(c.id);
                             setName(c.name);
+                            setOrder(c.order.toString());
                           }}
                           className="text-blue-600 hover:underline mr-2"
                         >
@@ -151,6 +178,7 @@ export default function CategoryPage() {
                               if (editingId === c.id) {
                                 setEditingId(null);
                                 setName("");
+                                setOrder("");
                               }
                             } else {
                               const d = await res.json();
