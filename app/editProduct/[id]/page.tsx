@@ -4,30 +4,6 @@ import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import ImagePickerModal from "../../_components/ImagePickerModal";
 
-// types matching schema
-interface Size {
-  sizeID: string;
-  sku: string;
-  sizeName: string;
-  mrp: number;
-  sellingPrice: number;
-  discountPercent: number;
-  stock: number;
-}
-
-interface Variety {
-  colorID: string;
-  colorName: string;
-  colorCode: string; // Starts with #, max 7 chars
-  imgLinks: string[];
-  sizes: Size[]; // Minimum 1 element
-}
-
-interface Desc {
-  key: string;
-  value: string;
-}
-
 interface ProductInput {
   _id?: string;
   brandId: string;
@@ -35,16 +11,7 @@ interface ProductInput {
   categoryId: string;
   subcategoryId: string;
   thumbnail: string;
-  varients: Variety[];
-  desc: Desc[];
-  tags: string[];
   loc: string;
-}
-
-// dynamic lists fetched from server
-
-function generateId() {
-  return Math.random().toString(36).substr(2, 9);
 }
 
 export default function EditProductPage() {
@@ -53,53 +20,38 @@ export default function EditProductPage() {
   const productId = params.id as string;
 
   const [loading, setLoading] = useState(true);
-  const [brandsList, setBrandsList] = useState<
-    { id: string; brandName: string }[]
-  >([]);
-  const [categoriesList, setCategoriesList] = useState<
-    { id: string; name: string }[]
-  >([]);
-  const [subcategoriesList, setSubcategoriesList] = useState<
-    { id: string; name: string }[]
-  >([]);
+  const [brandsList, setBrandsList] = useState<{ id: string; brandName: string }[]>([]);
+  const [categoriesList, setCategoriesList] = useState<{ id: string; name: string }[]>([]);
+  const [subcategoriesList, setSubcategoriesList] = useState<{ id: string; name: string }[]>([]);
   const [showImagePickerModal, setShowImagePickerModal] = useState(false);
-  const [editingImageIndices, setEditingImageIndices] = useState<{
-    varietyIndex: number;
-    imageLinkIndex: number;
-  } | null>(null);
+
   const [form, setForm] = useState<ProductInput>({
     brandId: "",
     productName: "",
     categoryId: "",
     subcategoryId: "",
     thumbnail: "",
-    varients: [],
-    desc: [],
-    tags: [],
     loc: "",
   });
 
+  // Load product
   useEffect(() => {
-    if (!productId) {
-      setLoading(false);
-      return;
-    }
+    if (!productId) return;
+
     async function loadProduct() {
       try {
         const res = await fetch(`/api/product?id=${productId}`);
         const data = await res.json();
+
         if (data) {
-          console.log({
-            ...data,
-            brandId: data.brandId._id,
-            categoryId: data.categoryId._id,
-            subcategoryId: data.subcategoryId._id,
-          });
           setForm({
-            ...data,
+            _id: data._id,
+            productName: data.productName,
             brandId: data.brandId._id,
             categoryId: data.categoryId._id,
             subcategoryId: data.subcategoryId._id,
+            thumbnail: data.thumbnail,
+            loc: data.loc,
           });
         }
       } catch (err) {
@@ -108,10 +60,11 @@ export default function EditProductPage() {
         setLoading(false);
       }
     }
+
     loadProduct();
   }, [productId]);
 
-  // load brands and categories
+  // Load dropdowns
   useEffect(() => {
     async function loadOptions() {
       try {
@@ -119,48 +72,56 @@ export default function EditProductPage() {
           fetch("/api/brand"),
           fetch("/api/category"),
         ]);
+
         const bData = await bRes.json();
-        if (bRes.ok)
+        if (bRes.ok) {
           setBrandsList(
             bData.brands.map((b: any) => ({
               id: b._id,
               brandName: b.brandName,
-            })),
+            }))
           );
+        }
+
         const cData = await cRes.json();
-        if (cRes.ok)
+        if (cRes.ok) {
           setCategoriesList(
-            cData.categories.map((c: any) => ({ id: c._id, name: c.name })),
+            cData.categories.map((c: any) => ({
+              id: c._id,
+              name: c.name,
+            }))
           );
+        }
       } catch (err) {
-        console.error("Failed to load brands/categories", err);
+        console.error("Failed loading options", err);
       }
     }
+
     loadOptions();
   }, []);
 
-  useEffect(() => {
-    console.log("Form Data: ");
-    console.log(form);
-  }, [form]);
-
-  // refetch subcategories when category changes
+  // Load subcategories when category changes
   useEffect(() => {
     async function loadSubs() {
       if (!form.categoryId) return setSubcategoriesList([]);
+
       try {
-        const res = await fetch(
-          `/api/subcategory?categoryId=${form.categoryId}`,
-        );
+        const res = await fetch(`/api/subcategory?categoryId=${form.categoryId}`);
         const data = await res.json();
-        if (res.ok)
+
+        if (res.ok) {
           setSubcategoriesList(
-            data.subcategories.map((s: any) => ({ id: s._id, name: s.name })),
+            data.subcategories.map((s: any) => ({
+              id: s._id,
+              name: s.name,
+            }))
           );
+        }
       } catch (err) {
-        console.error("Failed to load subcategories", err);
+        console.error("Failed loading subcategories", err);
       }
     }
+
     loadSubs();
   }, [form.categoryId]);
 
@@ -168,179 +129,19 @@ export default function EditProductPage() {
     setForm((f) => ({ ...f, [field]: value }));
   };
 
-  const addVariety = () => {
-    setForm((f) => ({
-      ...f,
-      varients: [
-        ...f.varients,
-        {
-          colorID: generateId(),
-          colorName: "",
-          colorCode: "",
-          imgLinks: [""],
-          sizes: [],
-        },
-      ],
-    }));
-  };
-
-  const updateVariety = (idx: number, changes: Partial<Variety>) => {
-    setForm((f) => {
-      const v = [...f.varients];
-      v[idx] = { ...v[idx], ...changes };
-      return { ...f, varients: v };
-    });
-  };
-
-  const addVarietyImage = (vIdx: number) => {
-    updateVariety(vIdx, {
-      imgLinks: [...form.varients[vIdx].imgLinks, ""],
-    });
-  };
-
-  const updateVarietyImage = (vIdx: number, iIdx: number, url: string) => {
-    setForm((f) => {
-      const v = [...f.varients];
-      const imgs = [...v[vIdx].imgLinks];
-      imgs[iIdx] = url;
-      v[vIdx].imgLinks = imgs;
-      return { ...f, varients: v };
-    });
-  };
-
-  const openImagePickerForVariety = (vIdx: number, iIdx: number) => {
-    setEditingImageIndices({ varietyIndex: vIdx, imageLinkIndex: iIdx });
-    setShowImagePickerModal(true);
-  };
-
-  const handleImageSelection = (url: string) => {
-    if (editingImageIndices) {
-      updateVarietyImage(
-        editingImageIndices.varietyIndex,
-        editingImageIndices.imageLinkIndex,
-        url,
-      );
-      setEditingImageIndices(null);
-    } else {
-      handleChange("thumbnail", url);
-    }
-    setShowImagePickerModal(false);
-  };
-
-  const addSize = (vIdx: number) => {
-    const newSize: Size = {
-      sizeID: generateId(),
-      sizeName: "",
-      mrp: 0,
-      sellingPrice: 0,
-      discountPercent: 0,
-      sku: "",
-      stock: 0,
-    };
-    setForm((prevForm) => {
-      const newVariety = [...prevForm.varients];
-      newVariety[vIdx] = {
-        ...newVariety[vIdx],
-        sizes: [...newVariety[vIdx].sizes, newSize],
-      };
-      return { ...prevForm, varients: newVariety };
-    });
-  };
-
-  const removeSize = (vIdx: number, sIdx: number) => {
-    setForm((prevForm) => {
-      const newVariety = [...prevForm.varients];
-      const sizes = [...newVariety[vIdx].sizes];
-      sizes.splice(sIdx, 1);
-      newVariety[vIdx] = { ...newVariety[vIdx], sizes };
-      return { ...prevForm, varients: newVariety };
-    });
-  };
-
-  const removeVariety = (vIdx: number) => {
-    setForm((prevForm) => {
-      const varients = [...prevForm.varients];
-      varients.splice(vIdx, 1);
-      return { ...prevForm, varients };
-    });
-  };
-
-  const updateSize = (vIdx: number, sIdx: number, changes: Partial<Size>) => {
-    setForm((f) => {
-      const v = [...f.varients];
-      const s = [...v[vIdx].sizes];
-      s[sIdx] = { ...s[sIdx], ...changes };
-      // Calculate discountPercent if mrp and sellingPrice are updated and non-zero
-      const updatedSize = s[sIdx];
-      if (updatedSize.mrp > 0 && updatedSize.sellingPrice > 0) {
-        updatedSize.discountPercent =
-          ((updatedSize.mrp - updatedSize.sellingPrice) * 100) /
-          updatedSize.mrp;
-      } else {
-        updatedSize.discountPercent = 0;
-      }
-      v[vIdx].sizes = s;
-      return { ...f, varients: v };
-    });
-  };
-
-  const addDesc = () => {
-    setForm((f) => ({
-      ...f,
-      desc: [...f.desc, { key: "", value: "" }],
-    }));
-  };
-
-  const updateDesc = (idx: number, changes: Partial<Desc>) => {
-    setForm((f) => {
-      const d = [...f.desc];
-      d[idx] = { ...d[idx], ...changes };
-      return { ...f, desc: d };
-    });
-  };
-
-  const addTag = () => {
-    setForm((f) => ({
-      ...f,
-      tags: [...f.tags, ""],
-    }));
-  };
-
-  const updateTag = (idx: number, value: string) => {
-    setForm((f) => {
-      const t = [...f.tags];
-      t[idx] = value;
-      return { ...f, tags: t };
-    });
-  };
-
-  const removeDesc = (idx: number) => {
-    setForm((f) => {
-      const d = [...f.desc];
-      d.splice(idx, 1);
-      return { ...f, desc: d };
-    });
-  };
-
-  const removeTag = (idx: number) => {
-    setForm((f) => {
-      const t = [...f.tags];
-      t.splice(idx, 1);
-      return { ...f, tags: t };
-    });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     await fetch("/api/product", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
+
     router.push("/product");
   };
 
-  if (loading)
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-8">
         <div className="rounded-3xl bg-white px-8 py-6 shadow-lg text-slate-700">
@@ -348,42 +149,47 @@ export default function EditProductPage() {
         </div>
       </div>
     );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-7xl overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_35px_60px_-35px_rgba(15,23,42,0.35)]">
+
+        {/* Header */}
         <div className="border-b border-slate-200 px-6 py-8 sm:px-10">
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
             Edit Product
           </h1>
           <p className="mt-2 text-sm text-slate-500">
-            Update the product details, variants, and metadata with a polished
-            form layout.
+            Update core product details.
           </p>
         </div>
 
+        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-8 px-6 py-8 sm:px-10">
+
+          {/* Core Fields */}
           <section className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 shadow-sm">
             <div className="grid gap-6 md:grid-cols-2">
+
+              {/* Name */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">
-                  Product Name
-                </label>
+                <label className="text-sm font-semibold text-slate-700">Product Name</label>
                 <input
                   value={form.productName}
                   onChange={(e) => handleChange("productName", e.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="w-full rounded-2xl border border-slate-300 px-4 py-3"
                   required
                 />
               </div>
+
+              {/* Brand */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">
-                  Brand
-                </label>
+                <label className="text-sm font-semibold text-slate-700">Brand</label>
                 <select
                   value={form.brandId}
                   onChange={(e) => handleChange("brandId", e.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="w-full rounded-2xl border border-slate-300 px-4 py-3"
                   required
                 >
                   <option value="">Select brand</option>
@@ -394,14 +200,14 @@ export default function EditProductPage() {
                   ))}
                 </select>
               </div>
+
+              {/* Category */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">
-                  Category
-                </label>
+                <label className="text-sm font-semibold text-slate-700">Category</label>
                 <select
                   value={form.categoryId}
                   onChange={(e) => handleChange("categoryId", e.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  className="w-full rounded-2xl border border-slate-300 px-4 py-3"
                   required
                 >
                   <option value="">Select category</option>
@@ -412,16 +218,14 @@ export default function EditProductPage() {
                   ))}
                 </select>
               </div>
+
+              {/* Subcategory */}
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">
-                  Subcategory
-                </label>
+                <label className="text-sm font-semibold text-slate-700">Subcategory</label>
                 <select
                   value={form.subcategoryId}
-                  onChange={(e) =>
-                    handleChange("subcategoryId", e.target.value)
-                  }
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                  onChange={(e) => handleChange("subcategoryId", e.target.value)}
+                  className="w-full rounded-2xl border border-slate-300 px-4 py-3"
                   required
                 >
                   <option value="">Select subcategory</option>
@@ -432,37 +236,32 @@ export default function EditProductPage() {
                   ))}
                 </select>
               </div>
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-semibold text-slate-700">
-                  Thumbnail
-                </label>
 
-                <div className="flex gap-4 items-center md:items-start flex-col md:flex-row">
-                  {/* Thumbnail Preview */}
+              {/* Thumbnail */}
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-semibold text-slate-700">Thumbnail</label>
+
+                <div className="flex gap-4 flex-col md:flex-row">
                   {form.thumbnail && (
-                    <div className="w-40 overflow-hidden rounded-2xl border border-slate-300 bg-white flex-shrink-0">
-                      <img
-                        src={form.thumbnail}
-                        alt="Thumbnail preview"
-                        className="w-full h-full object-cover"
-                      />
+                    <div className="w-40 rounded-2xl border border-slate-300 overflow-hidden">
+                      <img src={form.thumbnail} className="w-full h-full object-cover" />
                     </div>
                   )}
 
-                  {/* Action Buttons */}
                   <div className="flex flex-col gap-2">
                     <button
                       type="button"
                       onClick={() => setShowImagePickerModal(true)}
-                      className="w-40 inline-flex items-center justify-center rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100"
+                      className="w-40 rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3 text-blue-700"
                     >
                       {form.thumbnail ? "Change Image" : "Select Image"}
                     </button>
+
                     {form.thumbnail && (
                       <button
                         type="button"
                         onClick={() => handleChange("thumbnail", "")}
-                        className="w-40 inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
+                        className="w-40 rounded-2xl border border-slate-300 px-4 py-3"
                       >
                         Clear
                       </button>
@@ -470,356 +269,45 @@ export default function EditProductPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Location */}
               <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-semibold text-slate-700">
-                  Location
-                </label>
+                <label className="text-sm font-semibold text-slate-700">Location</label>
                 <input
                   value={form.loc}
                   onChange={(e) => handleChange("loc", e.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  placeholder="Enter location"
+                  className="w-full rounded-2xl border border-slate-300 px-4 py-3"
                 />
               </div>
             </div>
           </section>
 
-          <section className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 shadow-sm">
-            <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-slate-900">
-                  Varieties
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Add colors, images, and size options for this product.
-                </p>
-              </div>
+          {/* Buttons */}
+          <div className="flex flex-wrap justify-between gap-4">
+
+            {/* Left Buttons */}
+            <div className="flex gap-3">
               <button
                 type="button"
-                onClick={addVariety}
-                className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
+                onClick={() => router.push("/product")}
+                className="rounded-full border border-slate-300 px-6 py-3 text-slate-700 hover:bg-slate-100"
               >
-                + Add Variety
+                ← Back
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push(`/editVarient/${productId}`)}
+                className="rounded-full bg-blue-600 px-6 py-3 text-white hover:bg-blue-700 shadow-md"
+              >
+                Edit Variants →
               </button>
             </div>
 
-            {form.varients.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-5 py-6 text-sm text-slate-500">
-                No varieties added yet. Start by creating one.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {form.varients.map((v, vi) => (
-                  <div
-                    key={v.colorID}
-                    className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm"
-                  >
-                    <div className="grid gap-4 md:grid-cols-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700">
-                          Color Name
-                        </label>
-                        <input
-                          value={v.colorName}
-                          onChange={(e) =>
-                            updateVariety(vi, { colorName: e.target.value })
-                          }
-                          className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-slate-700">
-                          Color
-                        </label>
-                        <input
-                          value={v.colorCode}
-                          onChange={(e) =>
-                            updateVariety(vi, { colorCode: e.target.value })
-                          }
-                          className="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                          type="color"
-                        />
-                      </div>
-                      <div className="flex items-end justify-start">
-                        <button
-                          type="button"
-                          onClick={() => addVarietyImage(vi)}
-                          className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
-                        >
-                          + Image
-                        </button>
-                      </div>
-                      <div className="flex items-end justify-end">
-                        <button
-                          type="button"
-                          onClick={() => removeVariety(vi)}
-                          className="inline-flex items-center justify-center rounded-full border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100"
-                        >
-                          Remove Variety
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {v.imgLinks.map((img, ii) => (
-                        <div key={ii} className="space-y-2">
-                          <label className="text-sm font-semibold text-slate-700">
-                            Image {ii + 1}
-                          </label>
-                          <div className="flex flex-col gap-3 items-start">
-                            {/* Image Preview */}
-                            {img && (
-                              <div className="w-40 aspect-square overflow-hidden rounded-2xl border border-slate-300 bg-white flex-shrink-0">
-                                <img
-                                  src={img}
-                                  alt={`Image ${ii + 1}`}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            )}
-
-                            {/* Action Buttons */}
-                            <div className="flex flex-col gap-2 w-full">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  openImagePickerForVariety(vi, ii)
-                                }
-                                className="inline-flex items-center justify-center rounded-2xl border border-blue-300 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 shadow-sm transition hover:bg-blue-100"
-                              >
-                                {img ? "Change Image" : "Select Image"}
-                              </button>
-                              {img && (
-                                <button
-                                  type="button"
-                                  onClick={() => updateVarietyImage(vi, ii, "")}
-                                  className="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
-                                >
-                                  Clear
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-6 rounded-[28px] border border-slate-200 bg-slate-50 p-4">
-                      <div className="mb-4 flex items-center justify-between gap-4">
-                        <h3 className="text-sm font-semibold text-slate-900">
-                          Sizes
-                        </h3>
-                        <button
-                          type="button"
-                          onClick={() => addSize(vi)}
-                          className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
-                        >
-                          + Size
-                        </button>
-                      </div>
-                      <div className="space-y-4">
-                        {v.sizes.map((s, si) => (
-                          <div
-                            key={s.sizeID}
-                            className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7"
-                          >
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                                Size
-                              </label>
-                              <input
-                                placeholder="Size"
-                                value={s.sizeName}
-                                onChange={(e) =>
-                                  updateSize(vi, si, {
-                                    sizeName: e.target.value,
-                                  })
-                                }
-                                className="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                                SKU
-                              </label>
-                              <input
-                                placeholder="SKU"
-                                value={s.sku}
-                                onChange={(e) =>
-                                  updateSize(vi, si, { sku: e.target.value })
-                                }
-                                className="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                                MRP
-                              </label>
-                              <input
-                                placeholder="MRP"
-                                type="number"
-                                value={s.mrp}
-                                onChange={(e) =>
-                                  updateSize(vi, si, {
-                                    mrp: Number(e.target.value),
-                                  })
-                                }
-                                className="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                                Selling
-                              </label>
-                              <input
-                                placeholder="Selling"
-                                type="number"
-                                value={s.sellingPrice}
-                                onChange={(e) =>
-                                  updateSize(vi, si, {
-                                    sellingPrice: Number(e.target.value),
-                                  })
-                                }
-                                className="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                                Discount
-                              </label>
-                              <input
-                                placeholder="Discount"
-                                type="number"
-                                value={s.discountPercent.toFixed(2)}
-                                readOnly
-                                className="w-full rounded-2xl border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-900 shadow-sm"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                                Stock
-                              </label>
-                              <input
-                                placeholder="Stock"
-                                type="number"
-                                value={s.stock}
-                                onChange={(e) =>
-                                  updateSize(vi, si, {
-                                    stock: Number(e.target.value),
-                                  })
-                                }
-                                className="w-full rounded-2xl border border-slate-300 px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                              />
-                            </div>
-                            <div className="flex items-end justify-end">
-                              <button
-                                type="button"
-                                onClick={() => removeSize(vi, si)}
-                                className="inline-flex items-center justify-center rounded-full border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 shadow-sm">
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-slate-900">
-                    Description
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Add key/value product details for enhanced display.
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  {form.desc.map((d, di) => (
-                    <div key={di} className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 py-2">
-                      <input
-                        placeholder="Key"
-                        value={d.key}
-                        onChange={(e) =>
-                          updateDesc(di, { key: e.target.value })
-                        }
-                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                      />
-                      <input
-                        placeholder="Value"
-                        value={d.value}
-                        onChange={(e) =>
-                          updateDesc(di, { value: e.target.value })
-                        }
-                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeDesc(di)}
-                        className="inline-flex items-center justify-center rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={addDesc}
-                  className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
-                >
-                  + Add Description
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <h2 className="text-xl font-semibold text-slate-900">Tags</h2>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Add searchable tags to improve product discovery.
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  {form.tags.map((tag, ti) => (
-                    <div key={ti} className="flex flex-col md:flex-row gap-3 py-2">
-                      <input
-                        placeholder="Tag"
-                        value={tag}
-                        onChange={(e) => updateTag(ti, e.target.value)}
-                        className="flex-1 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeTag(ti)}
-                        className="inline-flex items-center justify-center rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 shadow-sm transition hover:bg-rose-100"
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={addTag}
-                  className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100"
-                >
-                  + Add Tag
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <div className="flex justify-end">
+            {/* Submit */}
             <button
               type="submit"
-              className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-7 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-700"
+              className="rounded-full bg-emerald-600 px-7 py-3 text-white hover:bg-emerald-700 shadow-lg"
             >
               Update Product
             </button>
@@ -827,21 +315,15 @@ export default function EditProductPage() {
         </form>
       </div>
 
-      {/* Image Picker Modal */}
+      {/* Image Picker */}
       <ImagePickerModal
         isOpen={showImagePickerModal}
-        onClose={() => {
+        onClose={() => setShowImagePickerModal(false)}
+        onSelect={(url) => {
+          handleChange("thumbnail", url);
           setShowImagePickerModal(false);
-          setEditingImageIndices(null);
         }}
-        onSelect={handleImageSelection}
-        selectedImageUrl={
-          editingImageIndices
-            ? form.varients[editingImageIndices.varietyIndex]?.imgLinks[
-                editingImageIndices.imageLinkIndex
-              ]
-            : form.thumbnail
-        }
+        selectedImageUrl={form.thumbnail}
       />
     </div>
   );
