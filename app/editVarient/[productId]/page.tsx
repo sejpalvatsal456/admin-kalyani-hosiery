@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import ImagePickerModal from "@/app/_components/ImagePickerModal";
+import toast, { Toaster } from "react-hot-toast";
 
 interface Variety {
   sku: string;
@@ -146,11 +147,13 @@ export default function EditVarientPage() {
 
       if (!res.ok) {
         const data = await res.json();
-        alert(data.msg || "Failed to save");
+        // alert(data.msg || "Failed to save");
+        toast.error(data.msg || "Failed to save");
         return;
       }
 
-      alert("Saved!");
+      // alert("Saved!");
+      toast.success("Saved!")
       router.push("/product");
     } catch (err) {
       console.error(err);
@@ -162,6 +165,7 @@ export default function EditVarientPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-10">
+      <Toaster />
       <div className="mx-auto max-w-4xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
         {/* Header */}
         <div className="border-b border-slate-200 px-6 py-8">

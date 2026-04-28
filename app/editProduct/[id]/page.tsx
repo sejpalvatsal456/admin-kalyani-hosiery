@@ -12,6 +12,8 @@ interface ProductInput {
   subcategoryId: string;
   thumbnail: string;
   loc: string;
+  desc: Array<{ key: string; value: string }>;
+  tags: string[];
 }
 
 export default function EditProductPage() {
@@ -32,7 +34,14 @@ export default function EditProductPage() {
     subcategoryId: "",
     thumbnail: "",
     loc: "",
+    desc: [],
+    tags: [],
   });
+
+  const [descriptionPairs, setDescriptionPairs] = useState<
+    Array<{ key: string; value: string }>
+  >([]);
+  const [tagsList, setTagsList] = useState<string[]>([]);
 
   // Load product
   useEffect(() => {
@@ -52,7 +61,11 @@ export default function EditProductPage() {
             subcategoryId: data.subcategoryId._id,
             thumbnail: data.thumbnail,
             loc: data.loc,
+            desc: data.desc || [],
+            tags: data.tags || [],
           });
+          setDescriptionPairs(data.desc || []);
+          setTagsList(data.tags || []);
         }
       } catch (err) {
         console.error(err);
@@ -127,6 +140,48 @@ export default function EditProductPage() {
 
   const handleChange = (field: keyof ProductInput, value: any) => {
     setForm((f) => ({ ...f, [field]: value }));
+  };
+
+  const handleAddDescriptionPair = () => {
+    const newPairs = [...descriptionPairs, { key: "", value: "" }];
+    setDescriptionPairs(newPairs);
+    handleChange("desc", newPairs);
+  };
+
+  const handleRemoveDescriptionPair = (index: number) => {
+    const newPairs = descriptionPairs.filter((_, i) => i !== index);
+    setDescriptionPairs(newPairs);
+    handleChange("desc", newPairs);
+  };
+
+  const handleUpdateDescriptionPair = (
+    index: number,
+    field: "key" | "value",
+    value: string,
+  ) => {
+    const newPairs = descriptionPairs.map((pair, i) =>
+      i === index ? { ...pair, [field]: value } : pair,
+    );
+    setDescriptionPairs(newPairs);
+    handleChange("desc", newPairs);
+  };
+
+  const handleAddTag = () => {
+    const newTags = [...tagsList, ""];
+    setTagsList(newTags);
+    handleChange("tags", newTags);
+  };
+
+  const handleRemoveTag = (index: number) => {
+    const newTags = tagsList.filter((_, i) => i !== index);
+    setTagsList(newTags);
+    handleChange("tags", newTags);
+  };
+
+  const handleUpdateTag = (index: number, value: string) => {
+    const newTags = tagsList.map((tag, i) => (i === index ? value : tag));
+    setTagsList(newTags);
+    handleChange("tags", newTags);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -279,6 +334,103 @@ export default function EditProductPage() {
                   className="w-full rounded-2xl border border-slate-300 px-4 py-3"
                 />
               </div>
+            </div>
+          </section>
+
+          {/* Description Pairs Section */}
+          <section className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 shadow-sm">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Product Description</h2>
+                <p className="mt-1 text-sm text-slate-500">Add key-value pairs to describe your product.</p>
+              </div>
+
+              {/* Description Pairs List */}
+              <div className="space-y-3">
+                {descriptionPairs.map((pair, index) => (
+                  <div key={index} className="flex gap-3 items-end">
+                    <div className="flex-1 space-y-2">
+                      <input
+                        type="text"
+                        placeholder="Key (e.g., Size, Material)"
+                        value={pair.key}
+                        onChange={(e) =>
+                          handleUpdateDescriptionPair(index, "key", e.target.value)
+                        }
+                        className="w-full rounded-2xl border border-slate-300 px-4 py-3"
+                      />
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <input
+                        type="text"
+                        placeholder="Value (e.g., L, Cotton)"
+                        value={pair.value}
+                        onChange={(e) =>
+                          handleUpdateDescriptionPair(index, "value", e.target.value)
+                        }
+                        className="w-full rounded-2xl border border-slate-300 px-4 py-3"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDescriptionPair(index)}
+                      className="rounded-full border border-red-300 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100 flex-shrink-0"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add Description Button */}
+              <button
+                type="button"
+                onClick={handleAddDescriptionPair}
+                className="rounded-full border border-green-300 bg-green-50 px-6 py-3 text-sm font-semibold text-green-700 shadow-sm transition hover:bg-green-100"
+              >
+                + Add Description
+              </button>
+            </div>
+          </section>
+
+          {/* Tags Section */}
+          <section className="rounded-[28px] border border-slate-200 bg-slate-50 p-6 shadow-sm">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Product Tags</h2>
+                <p className="mt-1 text-sm text-slate-500">Add tags to categorize and identify your product.</p>
+              </div>
+
+              {/* Tags List */}
+              <div className="space-y-3">
+                {tagsList.map((tag, index) => (
+                  <div key={index} className="flex gap-3 items-end">
+                    <input
+                      type="text"
+                      placeholder="e.g., premium, new-arrival"
+                      value={tag}
+                      onChange={(e) => handleUpdateTag(index, e.target.value)}
+                      className="w-full rounded-2xl border border-slate-300 px-4 py-3"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(index)}
+                      className="rounded-full border border-red-300 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100 flex-shrink-0"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add Tag Button */}
+              <button
+                type="button"
+                onClick={handleAddTag}
+                className="rounded-full border border-green-300 bg-green-50 px-6 py-3 text-sm font-semibold text-green-700 shadow-sm transition hover:bg-green-100"
+              >
+                + Add Tag
+              </button>
             </div>
           </section>
 
