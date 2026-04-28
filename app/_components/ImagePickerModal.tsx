@@ -129,7 +129,7 @@ export default function ImagePickerModal({
         </div>
 
         {/* 🔹 Body */}
-        <div className="px-6 py-6 sm:px-8">
+        <div className="px-6 py-6 sm:px-8 max-h-[50vh] overflow-y-scroll">
           {loading ? (
             <div className="h-64 flex items-center justify-center">
               <div className="animate-spin h-8 w-8 border-4 border-slate-300 border-t-blue-500 rounded-full"></div>

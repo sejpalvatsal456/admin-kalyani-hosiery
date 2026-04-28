@@ -111,6 +111,14 @@ export default function EditVarientPage() {
     });
   };
 
+  const removeImage = (vIdx: number, iIdx: number) => {
+    const newVarient = [...varients];
+    newVarient[vIdx].imgLinks = varients[vIdx].imgLinks.filter(
+      (img, key) => key !== iIdx,
+    );
+    setVarients(newVarient);
+  };
+
   const openPicker = (vIdx: number, iIdx: number) => {
     setEditingImage({ vIdx, iIdx });
     setShowImagePicker(true);
@@ -164,13 +172,6 @@ export default function EditVarientPage() {
 
         {/* Form Content */}
         <div className="space-y-6 px-6 py-8">
-          <button
-            onClick={addVarient}
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg active:scale-95"
-          >
-            + Add SKU
-          </button>
-
           <div className="space-y-4">
             {varients.map((v, i) => (
               <div
@@ -331,6 +332,13 @@ export default function EditVarientPage() {
                         >
                           {img ? "Change" : "Select"} Image
                         </button>
+                        <button
+                          type="button"
+                          onClick={() => removeImage(i, ii)}
+                          className="w-full inline-flex items-center justify-center rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 shadow-sm transition hover:bg-blue-100"
+                        >
+                          Remove Image
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -357,6 +365,13 @@ export default function EditVarientPage() {
               </div>
             ))}
           </div>
+
+          <button
+            onClick={addVarient}
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg active:scale-95"
+          >
+            + Add SKU
+          </button>
 
           {/* Save Button */}
           <div className="flex gap-3 border-t border-slate-200 pt-6">
