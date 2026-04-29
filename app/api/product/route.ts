@@ -2,13 +2,13 @@ import { connectDB } from "@/lib/connectDB";
 import { Product } from "@/lib/models";
 import { NextRequest, NextResponse } from "next/server";
 
-// 🔹 Generate slug
+// Generate slug
 const getSlug = (name: string): string => {
   return name
     .toLowerCase()
     .trim()
     .replace(/[^\w\s-]/g, "")
-    .replace(/[\s_-]+/g, "_")
+    .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "");
 };
 
@@ -66,12 +66,157 @@ export const GET = async (req: NextRequest) => {
       return NextResponse.json(prod, { status: 200 });
     }
 
-    const prods = await Product.find({})
-      .populate("brandId", "brandName")
-      .populate("categoryId", "name")
-      .populate("subcategoryId", "name");
+    // Material React Table server-side parameters
+    const start = parseInt(searchParams.get("start") || "0");
+    const size = parseInt(searchParams.get("size") || "10");
+    const globalFilter = searchParams.get("globalFilter") || "";
+    const sorting = searchParams.get("sorting") ? JSON.parse(searchParams.get("sorting")!) : [];
+    const filters = searchParams.get("filters") ? JSON.parse(searchParams.get("filters")!) : [];
 
-    return NextResponse.json(prods, { status: 200 });
+    // Build MongoDB query
+    let query: any = {};
+
+    // Global filter - search across multiple fields
+    if (globalFilter) {
+      query.$or = [
+        { productName: { $regex: globalFilter, $options: "i" } },
+        { slug: { $regex: globalFilter, $options: "i" } },
+      ];
+    }
+
+    // Column filters
+    filters.forEach((filter: any) => {
+      const { id, value } = filter;
+      switch (id) {
+        case "productName":
+          query.productName = { $regex: value, $options: "i" };
+          break;
+        case "brandId.brandName":
+          // We'll handle this after population
+          break;
+        case "categoryId.name":
+          // We'll handle this after population
+          break;
+        case "subcategoryId.name":
+          // We'll handle this after population
+          break;
+        case "slug":
+          query.slug = { $regex: value, $options: "i" };
+          break;
+      }
+    });
+
+    // Get total count for pagination
+    const totalCount = await Product.countDocuments(query);
+
+    // Build aggregation pipeline for population and filtering
+    let pipeline: any[] = [
+      { $match: query },
+      {
+        $lookup: {
+          from: "brands",
+          localField: "brandId",
+          foreignField: "_id",
+          as: "brandId"
+        }
+      },
+      {
+        $lookup: {
+          from: "categories",
+          localField: "categoryId",
+          foreignField: "_id",
+          as: "categoryId"
+        }
+      },
+      {
+        $lookup: {
+          from: "subcategories",
+          localField: "subcategoryId",
+          foreignField: "_id",
+          as: "subcategoryId"
+        }
+      },
+      {
+        $unwind: { path: "$brandId", preserveNullAndEmptyArrays: true }
+      },
+      {
+        $unwind: { path: "$categoryId", preserveNullAndEmptyArrays: true }
+      },
+      {
+        $unwind: { path: "$subcategoryId", preserveNullAndEmptyArrays: true }
+      }
+    ];
+
+    // Apply column filters that require populated data
+    const postFilters: any[] = [];
+    filters.forEach((filter: any) => {
+      const { id, value } = filter;
+      switch (id) {
+        case "brandId.brandName":
+          postFilters.push({
+            $match: {
+              "brandId.brandName": { $regex: value, $options: "i" }
+            }
+          });
+          break;
+        case "categoryId.name":
+          postFilters.push({
+            $match: {
+              "categoryId.name": { $regex: value, $options: "i" }
+            }
+          });
+          break;
+        case "subcategoryId.name":
+          postFilters.push({
+            $match: {
+              "subcategoryId.name": { $regex: value, $options: "i" }
+            }
+          });
+          break;
+      }
+    });
+
+    pipeline = pipeline.concat(postFilters);
+
+    // Apply sorting
+    if (sorting.length > 0) {
+      const sortStage: any = { $sort: {} };
+      sorting.forEach((sort: any) => {
+        const { id, desc } = sort;
+        switch (id) {
+          case "productName":
+            sortStage.$sort.productName = desc ? -1 : 1;
+            break;
+          case "brandId.brandName":
+            sortStage.$sort["brandId.brandName"] = desc ? -1 : 1;
+            break;
+          case "categoryId.name":
+            sortStage.$sort["categoryId.name"] = desc ? -1 : 1;
+            break;
+          case "subcategoryId.name":
+            sortStage.$sort["subcategoryId.name"] = desc ? -1 : 1;
+            break;
+          case "slug":
+            sortStage.$sort.slug = desc ? -1 : 1;
+            break;
+        }
+      });
+      pipeline.push(sortStage);
+    }
+
+    // Apply pagination
+    pipeline.push({ $skip: start });
+    pipeline.push({ $limit: size });
+
+    // Execute aggregation
+    const products = await Product.aggregate(pipeline);
+
+    return NextResponse.json({
+      data: products,
+      meta: {
+        totalRowCount: totalCount,
+      }
+    }, { status: 200 });
 
   } catch (error) {
     console.log(error);

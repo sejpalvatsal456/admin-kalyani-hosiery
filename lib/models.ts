@@ -82,7 +82,7 @@ const VarietySchema = new Schema(
 
     stock: { type: Number, default: 0 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 // --- Main Models ---
@@ -245,7 +245,6 @@ const OrderSchema = new Schema(
       ],
     },
     shippingAddress: { type: String },
-    totalAmount: { type: Number, required: true, default: 0 },
     paymentStatus: {
       type: String,
       enum: ["pending", "paid", "failed", "refunded"],
@@ -256,6 +255,7 @@ const OrderSchema = new Schema(
       enum: ["pending", "placed", "processing", "delivered", "cancelled"],
       default: "pending",
     },
+    totalAmount: { type: Number, required: true, min: 0 },
   },
   { timestamps: true },
 );

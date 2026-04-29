@@ -52,6 +52,7 @@ interface Order {
   orderStatus: "pending" | "placed" | "processing" | "delivered" | "cancelled";
   createdAt: string;
   updatedAt: string;
+  totalAmount: number;
 }
 
 export default function OrderDetailPage() {
@@ -78,6 +79,7 @@ export default function OrderDetailPage() {
         throw new Error("Failed to fetch order details");
       }
       const data = await res.json();
+      console.log(data.order)
       setOrder(data.order);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -441,7 +443,7 @@ export default function OrderDetailPage() {
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-200">
           <div className="flex justify-end items-center gap-4">
             <span className="text-lg font-semibold text-gray-900">Grand Total:</span>
-            <span className="text-3xl font-bold text-blue-600">₹{calculateGrandTotal()}</span>
+            <span className="text-3xl font-bold text-blue-600">₹{order.totalAmount}</span>
           </div>
         </div>
       </div>

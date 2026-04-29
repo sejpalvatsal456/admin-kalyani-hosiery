@@ -131,7 +131,14 @@ export default function OrderStatus() {
                     }}
                   />
                 </Pie>
-                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartTooltip
+                cursor={false}
+                content={
+                  <ChartTooltipContent
+                    className="bg-white text-slate-900 border border-gray-200 shadow-md [&_*]:text-slate-900"
+                  />
+                }
+              />
               </PieChart>
             </ResponsiveContainer>
           </ChartContainer>

@@ -40,6 +40,7 @@ export default function OrdersPage() {
         throw new Error("Failed to fetch orders");
       }
       const data = await res.json();
+      console.log(data.orders);
       setOrders(data.orders || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");

@@ -70,56 +70,7 @@ export default function OrderOverview() {
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={[
-                {
-                  month: "May 2025",
-                  orders: 0,
-                },
-                {
-                  month: "Jun 2025",
-                  orders: 0,
-                },
-                {
-                  month: "Jul 2025",
-                  orders: 0,
-                },
-                {
-                  month: "Aug 2025",
-                  orders: 0,
-                },
-                {
-                  month: "Sep 2025",
-                  orders: 0,
-                },
-                {
-                  month: "Oct 2025",
-                  orders: 0,
-                },
-                {
-                  month: "Nov 2025",
-                  orders: 0,
-                },
-                {
-                  month: "Dec 2025",
-                  orders: 0,
-                },
-                {
-                  month: "Jan 2026",
-                  orders: 0,
-                },
-                {
-                  month: "Feb 2026",
-                  orders: 15,
-                },
-                {
-                  month: "Mar 2026",
-                  orders: 0,
-                },
-                {
-                  month: "Apr 2026",
-                  orders: 10,
-                },
-              ]}
+              data={data}
               accessibilityLayer
             >
               <XAxis
