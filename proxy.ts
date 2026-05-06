@@ -15,6 +15,8 @@ export function proxy(req: NextRequest) {
     "/sale-products",
     "/sale-popular-products",
     "/reels-banner",
+    '/orders',
+    '/media'
   ];
 
   const needsAuth = protectedPaths.some(
@@ -47,5 +49,7 @@ export const config = {
     "/sale-products",
     "/sale-popular-products",
     "/reels-banner",
+    '/orders',
+    '/media'
   ],
 };

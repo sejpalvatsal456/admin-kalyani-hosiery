@@ -13,12 +13,27 @@ const s3Client = new S3Client({
   },
 });
 
-// GET /api/media - List all media
-export async function GET() {
+// ─── GET /api/media ───────────────────────────────────────────────────────────
+// ?type=reel   → returns only videos
+// ?type=banner → returns only images
+// (no type)    → returns all media (existing behavior)
+
+export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
-    const media = await Media.find().sort({ createdAt: -1 });
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get("type");
+
+    const query: Record<string, unknown> = {};
+
+    if (type === "reel") {
+      query.type = { $regex: "^video/" };
+    } else if (type === "banner") {
+      query.type = { $regex: "^image/" };
+    }
+
+    const media = await Media.find(query).sort({ createdAt: -1 });
     return NextResponse.json(media);
   } catch (error) {
     console.error("Error fetching media:", error);
@@ -26,10 +41,22 @@ export async function GET() {
   }
 }
 
-// POST /api/media - Upload media
+// ─── POST /api/media ──────────────────────────────────────────────────────────
+// ?type=reel   → validates video, uploads to reels/
+// ?type=banner → validates image, uploads to banner/
+// (no type)    → uploads to media/ (existing behavior)
+
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
+
+    const { searchParams } = new URL(request.url);
+    const type = searchParams.get("type");
+
+    // Validate type param
+    if (type && !["reel", "banner"].includes(type)) {
+      return NextResponse.json({ error: "Invalid type" }, { status: 400 });
+    }
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
@@ -38,10 +65,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
+    // Validate file type against category
+    if (type === "reel" && !file.type.startsWith("video/")) {
+      return NextResponse.json(
+        { error: "Only video files allowed for reels" },
+        { status: 400 }
+      );
+    }
+    if (type === "banner" && !file.type.startsWith("image/")) {
+      return NextResponse.json(
+        { error: "Only image files allowed for banners" },
+        { status: 400 }
+      );
+    }
+
     const fileName = file.name;
     const fileSize = file.size;
     const fileType = file.type;
-    const key = `media/${uuidv4()}-${fileName}`;
+
+    // Resolve S3 folder based on type
+    let folder = "media";
+    if (type === "reel") folder = "reels";
+    if (type === "banner") folder = "banner";
+
+    const key = `${folder}/${uuidv4()}-${fileName}`;
 
     // Upload to S3
     const upload = new Upload({
@@ -58,13 +105,14 @@ export async function POST(request: NextRequest) {
 
     const url = `https://d1ho0zjs4a519l.cloudfront.net/${key}`;
 
-    // Save to DB
+    // Save to DB with category field
     const media = new Media({
       name: fileName,
       url,
       key,
       size: fileSize,
       type: fileType,
+      category: type || "media",
     });
 
     await media.save();
@@ -76,7 +124,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE /api/media?id=... - Delete media
+// ─── DELETE /api/media?id=... ─────────────────────────────────────────────────
+// ?type is accepted for consistency but not required —
+// the correct S3 folder is already encoded in media.key
+
 export async function DELETE(request: NextRequest) {
   try {
     await connectDB();
@@ -93,7 +144,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Media not found" }, { status: 404 });
     }
 
-    // Delete from S3
+    // Delete from S3 (key already contains the correct folder)
     const deleteCommand = new DeleteObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME!,
       Key: media.key,

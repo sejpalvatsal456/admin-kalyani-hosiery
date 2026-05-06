@@ -19,6 +19,8 @@ export async function GET(req: NextRequest) {
       }
     }).select('orderStatus');
 
+    console.log(orders);
+
     // Count orders by status
     const statusCounts: { [key: string]: number } = {
       pending: 0,
