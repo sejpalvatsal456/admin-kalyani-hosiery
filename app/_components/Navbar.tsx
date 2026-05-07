@@ -12,9 +12,10 @@ export default function Navbar() {
     { label: 'Subcategory', href: '/subcategory' },
     { label: 'Product', href: '/product' },
     { label: 'Orders', href: '/orders' },
+    { label: 'Reels', href: '/reels' },
+    { label: 'Banners', href: '/banners' },
     { label: 'Sale Products', href: '/sale-products' },
     { label: 'Popular Products', href: '/popular-products' },
-    { label: 'Reels/Banner', href: '/reels-banner' },
     { label: 'Media', href: '/media' },
   ];
 

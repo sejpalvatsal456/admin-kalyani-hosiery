@@ -10,8 +10,6 @@ interface MediaItem {
   size: number;
   type: string;
   createdAt: string;
-
-  category?: "media" | "reel" | "banner";
 }
 
 const formatSize = (bytes: number) => {
@@ -33,33 +31,26 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString();
 };
 
-export default function MediaPage() {
-  const [media, setMedia] = useState<MediaItem[]>([]);
-
+export default function ReelsPage() {
+  const [reels, setReels] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [uploading, setUploading] = useState(false);
-
-  const [deleting, setDeleting] =
-    useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchMedia();
+    fetchReels();
   }, []);
 
-  const fetchMedia = async () => {
+  const fetchReels = async () => {
     try {
-      /**
-       * New API only returns category="media"
-       */
-      const res = await fetch("/api/media");
+      const res = await fetch("/api/media?type=reel");
 
       if (res.ok) {
         const data = await res.json();
-        setMedia(data);
+        setReels(data);
       }
     } catch (error) {
-      console.error("Error fetching media:", error);
+      console.error("Error fetching reels:", error);
     } finally {
       setLoading(false);
     }
@@ -71,7 +62,6 @@ export default function MediaPage() {
     e.preventDefault();
 
     const formData = new FormData(e.currentTarget);
-
     const file = formData.get("file") as File;
 
     if (!file) return;
@@ -80,119 +70,97 @@ export default function MediaPage() {
 
     try {
       const uploadFormData = new FormData();
-
       uploadFormData.append("file", file);
 
-      /**
-       * Default upload = media category
-       */
-      const res = await fetch("/api/media", {
+      const res = await fetch("/api/media?type=reel", {
         method: "POST",
         body: uploadFormData,
       });
 
       if (res.ok) {
-        const newMedia = await res.json();
+        const newReel = await res.json();
 
-        setMedia((prev) => [newMedia, ...prev]);
+        setReels((prev) => [newReel, ...prev]);
 
         (e.target as HTMLFormElement).reset();
       } else {
-        alert("Failed to upload media");
+        alert("Failed to upload reel");
       }
     } catch (error) {
-      console.error("Error uploading media:", error);
-
-      alert("Error uploading media");
+      console.error("Error uploading reel:", error);
+      alert("Error uploading reel");
     } finally {
       setUploading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this media?"
-      )
-    ) {
+    if (!confirm("Are you sure you want to delete this reel?")) {
       return;
     }
 
     setDeleting(id);
 
     try {
-      const res = await fetch(
-        `/api/media?id=${id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const res = await fetch(`/api/media?id=${id}`, {
+        method: "DELETE",
+      });
 
       if (res.ok) {
-        setMedia((prev) =>
-          prev.filter((m) => m._id !== id)
+        setReels((prev) =>
+          prev.filter((item) => item._id !== id)
         );
       } else {
-        alert("Failed to delete media");
+        alert("Failed to delete reel");
       }
     } catch (error) {
-      console.error("Error deleting media:", error);
-
-      alert("Error deleting media");
+      console.error("Error deleting reel:", error);
+      alert("Error deleting reel");
     } finally {
       setDeleting(null);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-10">
-        <div className="mx-auto max-w-7xl">
-          <div className="text-center">
-            Loading...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-7xl overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_35px_60px_-35px_rgba(15,23,42,0.35)]">
-
         {/* Header */}
         <div className="border-b border-slate-200 px-6 py-8 sm:px-10">
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
-            Media Library
-          </h1>
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🎬</span>
 
-          <p className="mt-2 text-sm text-slate-500">
-            Manage your uploaded media files stored
-            in the cloud.
-          </p>
+            <div>
+              <h1 className="text-3xl font-semibold tracking-tight text-slate-900">
+                Reels
+              </h1>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Upload and manage your short video reels stored in the cloud.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="px-6 py-8 sm:px-10">
-
           {/* Upload Form */}
           <section className="mb-8 rounded-[28px] border border-slate-200 bg-slate-50 p-6 shadow-sm">
             <h2 className="mb-4 text-xl font-semibold text-slate-900">
-              Upload New Media
+              Upload New Reel
             </h2>
 
             <form
               onSubmit={handleUpload}
-              className="flex gap-4 items-end"
+              className="flex items-end gap-4"
             >
               <div className="flex-1">
                 <label className="mb-2 block text-sm font-semibold text-slate-700">
-                  Select File
+                  Select Video File
                 </label>
 
                 <input
                   type="file"
                   name="file"
-                  accept="image/*,video/*"
+                  accept="video/*"
                   required
                   className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                 />
@@ -203,52 +171,39 @@ export default function MediaPage() {
                 disabled={uploading}
                 className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-7 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-emerald-700 disabled:opacity-50"
               >
-                {uploading
-                  ? "Uploading..."
-                  : "Upload"}
+                {uploading ? "Uploading..." : "Upload"}
               </button>
             </form>
           </section>
 
-          {/* Media Grid */}
+          {/* Reels Grid */}
           <section>
             <h2 className="mb-6 text-xl font-semibold text-slate-900">
-              Uploaded Media (
-              {loading ? "…" : media.length})
+              Uploaded Reels ({loading ? "…" : reels.length})
             </h2>
 
-            {media.length === 0 ? (
+            {loading ? (
               <div className="py-12 text-center text-slate-500">
-                No media uploaded yet. Upload your
-                first file above.
+                Loading reels...
+              </div>
+            ) : reels.length === 0 ? (
+              <div className="py-12 text-center text-slate-500">
+                No reels uploaded yet. Upload your first video above.
               </div>
             ) : (
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {media.map((item) => (
+                {reels.map((item) => (
                   <div
                     key={item._id}
                     className="group relative rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md"
                   >
-
-                    {/* Preview */}
-                    <div className="mb-3 overflow-hidden rounded-lg bg-slate-100">
-
-                      {/* IMAGE */}
-                      {item.type.startsWith(
-                        "image/"
-                      ) ? (
-                        <img
-                          src={item.url}
-                          alt={item.name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <video
-                          src={item.url}
-                          controls
-                          className="h-full w-full object-cover"
-                        />
-                      )}
+                    {/* Video */}
+                    <div className="mb-3 overflow-hidden rounded-lg bg-slate-900">
+                      <video
+                        src={item.url}
+                        controls
+                        className="h-full w-full object-cover"
+                      />
                     </div>
 
                     {/* Meta */}
@@ -268,14 +223,9 @@ export default function MediaPage() {
 
                     {/* Delete */}
                     <button
-                      onClick={() =>
-                        handleDelete(item._id)
-                      }
-                      disabled={
-                        deleting === item._id
-                      }
+                      onClick={() => handleDelete(item._id)}
+                      disabled={deleting === item._id}
                       className="absolute top-2 right-2 rounded-full bg-rose-500 p-1.5 text-white opacity-0 transition group-hover:opacity-100 hover:bg-rose-600 disabled:opacity-50"
-                      title="Delete media"
                     >
                       <svg
                         className="h-4 w-4"

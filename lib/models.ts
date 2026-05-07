@@ -291,13 +291,41 @@ checkoutSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 // Media Model
 const MediaSchema = new Schema(
   {
-    name: { type: String, required: true },
-    url: { type: String, required: true },
-    key: { type: String, required: true },
-    size: { type: Number, required: true },
-    type: { type: String, required: true },
+    name: String,
+    url: String,
+    key: String,
+    size: Number,
+    type: String,
+
+    // ✅ NEW FIELDS
+    category: {
+      type: String,
+      enum: ["media", "reel", "banner"],
+      default: "media",
+    },
+
+    slot: {
+      type: String,
+      default: null,
+    },
+
+    variant: {
+      type: String,
+      enum: ["carousel", "single"],
+      default: null,
+    },
+
+    order: {
+      type: Number,
+      default: 0,
+    },
+
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
 export const Brand = models.Brand || model("Brand", BrandSchema);

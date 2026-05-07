@@ -14,7 +14,8 @@ export function proxy(req: NextRequest) {
     "/popular-products",
     "/sale-products",
     "/sale-popular-products",
-    "/reels-banner",
+    "/reels",
+    '/banners',
     '/orders',
     '/media'
   ];
@@ -48,7 +49,8 @@ export const config = {
     "/popular-products",
     "/sale-products",
     "/sale-popular-products",
-    "/reels-banner",
+    "/reels",
+    '/banners',
     '/orders',
     '/media'
   ],
