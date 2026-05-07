@@ -6,47 +6,58 @@ export default function Navbar() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navItems = [
-    { label: 'Dashboard', href: '/' },
-    { label: 'Brand', href: '/brand' },
-    { label: 'Category', href: '/category' },
-    { label: 'Subcategory', href: '/subcategory' },
-    { label: 'Product', href: '/product' },
-    { label: 'Orders', href: '/orders' },
-    { label: 'Reels', href: '/reels' },
-    { label: 'Banners', href: '/banners' },
-    { label: 'Sale Products', href: '/sale-products' },
-    { label: 'Popular Products', href: '/popular-products' },
-    { label: 'Media', href: '/media' },
+    { label: "Dashboard", href: "/" },
+    { label: "Brand", href: "/brand" },
+    { label: "Category", href: "/category" },
+    { label: "Subcategory", href: "/subcategory" },
+    { label: "Product", href: "/product" },
+    { label: "Orders", href: "/orders" },
+    { label: "Reels", href: "/reels" },
+    { label: "Banners", href: "/banners" },
+    { label: "Sale Products", href: "/sale-products" },
+    { label: "Popular Products", href: "/popular-products" },
+    { label: "Media", href: "/media" },
   ];
 
   const sidebar = (
-    <aside className="bg-white h-full mt-10 ml-5 flex flex-col">
-      <div className="sticky top-0 bg-white py-2 mb-4">
+    <aside className="bg-white h-screen mt-10 ml-5 flex flex-col w-64">
+      {/* Fixed Header */}
+      <div className="sticky top-0 bg-white py-2 mb-4 z-10">
         <h2 className="text-xl font-bold">Admin Panel</h2>
       </div>
-      <nav className="space-y-2">
-        {navItems.map((item) => (
+
+      {/* Scrollable Nav */}
+      <div className="flex-1 mb-10 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+        <nav className="space-y-2 pb-6">
+          {navItems.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className="block px-3 py-2 rounded hover:bg-gray-200 transition-colors"
+            >
+              {item.label}
+            </a>
+          ))}
+
           <a
-            key={item.href}
-            href={item.href}
-            className="block px-3 py-2 rounded hover:bg-gray-200"
+            href="/api/auth/logout"
+            className="block px-3 py-2 rounded hover:bg-gray-200 text-red-600 transition-colors"
           >
-            {item.label}
+            Logout
           </a>
-        ))}
-        <a href="/api/auth/logout" className="block px-3 py-2 rounded hover:bg-gray-200 text-red-600">Logout</a>
-      </nav>
+        </nav>
+      </div>
     </aside>
   );
 
   return (
     <div className="flex">
-      {/* desktop sidebar */}
+      {/* Desktop Sidebar */}
       <div className="hidden md:block fixed inset-y-0 left-0">
         {sidebar}
       </div>
 
-      {/* mobile hamburger */}
+      {/* Mobile Hamburger */}
       <div className="md:hidden p-2 z-50">
         <button
           onClick={() => setSidebarOpen(true)}
@@ -69,20 +80,22 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* overlay mobile sidebar */}
+      {/* Mobile Sidebar */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 flex">
           <div
             className="fixed inset-0 bg-black opacity-50"
             onClick={() => setSidebarOpen(false)}
           />
-          <div className="relative bg-white w-64 h-full">
+
+          <div className="relative bg-white w-64 h-screen">
             <button
               onClick={() => setSidebarOpen(false)}
-              className="absolute top-2 right-2 text-gray-700"
+              className="absolute top-2 right-2 text-gray-700 z-20"
             >
               &#x2715;
             </button>
+
             {sidebar}
           </div>
         </div>
