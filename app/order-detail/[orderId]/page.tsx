@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 
 interface Variety {
   sku: string;
@@ -41,7 +40,12 @@ interface Order {
   items: OrderItem[];
   shippingAddress?: string;
   paymentStatus: "pending" | "paid" | "failed" | "refunded";
-  orderStatus: "pending" | "placed" | "processing" | "delivered" | "cancelled";
+  orderStatus:
+    | "pending"
+    | "placed"
+    | "processing"
+    | "delivered"
+    | "cancelled";
   createdAt: string;
   updatedAt: string;
   totalAmount: number;
@@ -71,12 +75,14 @@ export default function OrderDetailPage() {
   const fetchOrder = async () => {
     try {
       setLoading(true);
+
       const res = await fetch(`/api/orders/${orderId}`);
+
       if (!res.ok) {
         throw new Error("Failed to fetch order details");
       }
+
       const data = await res.json();
-      console.log(data.order);
       setOrder(data.order);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -158,14 +164,10 @@ export default function OrderDetailPage() {
 
   const calculateTotal = (item: OrderItem): number => {
     const colorSize = getColorAndSize(item);
-    if (!colorSize) return 0;
-    return colorSize.sellingPrice * item.quantity;
-  };
 
-  const calculateGrandTotal = (): number => {
-    return (
-      order?.items.reduce((sum, item) => sum + calculateTotal(item), 0) || 0
-    );
+    if (!colorSize) return 0;
+
+    return colorSize.sellingPrice * item.quantity;
   };
 
   const handleStatusUpdate = async () => {
@@ -173,10 +175,15 @@ export default function OrderDetailPage() {
 
     try {
       setUpdating(true);
+
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderStatus: updatedOrderStatus }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderStatus: updatedOrderStatus,
+        }),
       });
 
       if (!res.ok) {
@@ -185,12 +192,15 @@ export default function OrderDetailPage() {
       }
 
       const data = await res.json();
+
       setOrder(data.order);
       setUpdatedOrderStatus(null);
+
       setUpdateMessage({
         type: "success",
         text: "Order status updated successfully!",
       });
+
       setTimeout(() => setUpdateMessage(null), 3000);
     } catch (err) {
       setUpdateMessage({
@@ -198,6 +208,7 @@ export default function OrderDetailPage() {
         text:
           err instanceof Error ? err.message : "Failed to update order status",
       });
+
       setTimeout(() => setUpdateMessage(null), 3000);
     } finally {
       setUpdating(false);
@@ -210,7 +221,7 @@ export default function OrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 p-8">
+      <div className="min-h-screen bg-gray-100 p-4 md:p-8">
         <div className="mb-6">
           <button
             onClick={() => router.back()}
@@ -219,21 +230,23 @@ export default function OrderDetailPage() {
             ← Back to Orders
           </button>
         </div>
+
         <div className="bg-white rounded shadow p-8">
           <div className="flex items-center justify-center space-x-2">
             <div
               className="w-3 h-3 bg-blue-600 rounded-full animate-bounce"
               style={{ animationDelay: "0s" }}
-            ></div>
+            />
             <div
               className="w-3 h-3 bg-blue-600 rounded-full animate-bounce"
               style={{ animationDelay: "0.2s" }}
-            ></div>
+            />
             <div
               className="w-3 h-3 bg-blue-600 rounded-full animate-bounce"
               style={{ animationDelay: "0.4s" }}
-            ></div>
+            />
           </div>
+
           <p className="text-center text-gray-600 mt-4">
             Loading order details...
           </p>
@@ -244,7 +257,7 @@ export default function OrderDetailPage() {
 
   if (error || !order) {
     return (
-      <div className="min-h-screen bg-gray-100 p-8">
+      <div className="min-h-screen bg-gray-100 p-4 md:p-8">
         <div className="mb-6">
           <button
             onClick={() => router.back()}
@@ -253,10 +266,12 @@ export default function OrderDetailPage() {
             ← Back to Orders
           </button>
         </div>
+
         <div className="bg-white rounded shadow p-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
             Error Loading Order
           </h2>
+
           <p className="text-rose-600 text-sm mt-2">
             {error || "Order not found"}
           </p>
@@ -296,99 +311,104 @@ export default function OrderDetailPage() {
         }
       `}</style>
 
-      {/* Hidden Receipt for Print */}
+      {/* PRINT RECEIPT */}
       <div id="receipt-print" className="hidden print:block bg-white">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-1">
             Order Receipt
           </h1>
-          <p className="text-xs text-gray-600">Thank you for your purchase!</p>
+
+          <p className="text-xs text-gray-600">
+            Thank you for your purchase!
+          </p>
         </div>
 
         <div className="border-t border-b border-gray-300 py-3 mb-4">
           <div className="flex justify-between text-xs mb-2">
-            <span className="font-semibold text-gray-900">Receipt #</span>
-            <span className="text-gray-800 font-mono text-xs">{order._id}</span>
+            <span className="font-semibold">Receipt #</span>
+            <span className="font-mono">{order._id}</span>
           </div>
+
           <div className="flex justify-between text-xs mb-2">
-            <span className="font-semibold text-gray-900">Date</span>
-            <span className="text-gray-800">
-              {formatDateOnly(order.createdAt)}
-            </span>
+            <span className="font-semibold">Date</span>
+            <span>{formatDateOnly(order.createdAt)}</span>
           </div>
+
           <div className="flex justify-between text-xs mb-2">
-            <span className="font-semibold text-gray-900">Payment</span>
-            <span className="text-gray-800 capitalize">
-              {order.paymentStatus}
-            </span>
+            <span className="font-semibold">Payment</span>
+            <span className="capitalize">{order.paymentStatus}</span>
           </div>
+
           <div className="flex justify-between text-xs">
-            <span className="font-semibold text-gray-900">Status</span>
-            <span className="text-gray-800 capitalize">
-              {order.orderStatus}
-            </span>
+            <span className="font-semibold">Status</span>
+            <span className="capitalize">{order.orderStatus}</span>
           </div>
         </div>
 
         <div className="mb-4 pb-3 border-b border-gray-300">
-          <p className="text-xs font-semibold text-gray-900 mb-1">CUSTOMER</p>
-          <p className="text-xs text-gray-800 font-semibold mb-1">
+          <p className="text-xs font-semibold mb-1">CUSTOMER</p>
+
+          <p className="text-xs font-semibold mb-1">
             {order.userId.name}
           </p>
-          <p className="text-xs text-gray-600 mb-1">{order.userId.phone}</p>
+
+          <p className="text-xs text-gray-600 mb-1">
+            {order.userId.phone}
+          </p>
+
           {order.userId.email && (
-            <p className="text-xs text-gray-600 mb-1">{order.userId.email}</p>
+            <p className="text-xs text-gray-600 mb-1">
+              {order.userId.email}
+            </p>
           )}
+
           {order.shippingAddress && (
-            <p className="text-xs text-gray-600">{order.shippingAddress}</p>
+            <p className="text-xs text-gray-600">
+              {order.shippingAddress}
+            </p>
           )}
         </div>
 
         <table className="w-full text-xs mb-4">
           <thead>
             <tr className="border-b border-gray-300">
-              <th className="text-left font-semibold text-gray-900 py-2 pb-2">
-                Product
-              </th>
-              <th className="text-left font-semibold text-gray-900 py-2 pb-2">
-                Color
-              </th>
-              <th className="text-left font-semibold text-gray-900 py-2 pb-2">
-                Size
-              </th>
-              <th className="text-center font-semibold text-gray-900 py-2 pb-2">
-                Qty
-              </th>
-              <th className="text-right font-semibold text-gray-900 py-2 pb-2">
-                Price
-              </th>
-              <th className="text-right font-semibold text-gray-900 py-2 pb-2">
-                Total
-              </th>
+              <th className="text-left py-2">Product</th>
+              <th className="text-left py-2">Color</th>
+              <th className="text-left py-2">Size</th>
+              <th className="text-center py-2">Qty</th>
+              <th className="text-right py-2">Price</th>
+              <th className="text-right py-2">Total</th>
             </tr>
           </thead>
+
           <tbody>
             {order.items.map((item, idx) => {
               const colorSize = getColorAndSize(item);
               const itemTotal = calculateTotal(item);
+
               return (
                 <tr key={idx} className="border-b border-gray-200">
-                  <td className="text-left text-gray-800 py-2 max-w-[80px]">
+                  <td className="py-2">
                     {item.productId.productName}
                   </td>
-                  <td className="text-left text-gray-700 py-2 text-xs">
+
+                  <td className="py-2">
                     {colorSize?.colorName || "—"}
                   </td>
-                  <td className="text-left text-gray-700 py-2 text-xs">
+
+                  <td className="py-2">
                     {colorSize?.sizeName || "—"}
                   </td>
-                  <td className="text-center text-gray-700 py-2">
+
+                  <td className="text-center py-2">
                     {item.quantity}
                   </td>
-                  <td className="text-right text-gray-700 py-2">
+
+                  <td className="text-right py-2">
                     ₹{colorSize?.sellingPrice || 0}
                   </td>
-                  <td className="text-right text-gray-800 py-2 font-semibold">
+
+                  <td className="text-right py-2 font-semibold">
                     ₹{itemTotal}
                   </td>
                 </tr>
@@ -399,8 +419,9 @@ export default function OrderDetailPage() {
 
         <div className="border-t-2 border-gray-900 pt-3 mb-4">
           <div className="flex justify-between">
-            <span className="text-sm font-bold text-gray-900">TOTAL</span>
-            <span className="text-lg font-bold text-gray-900">
+            <span className="text-sm font-bold">TOTAL</span>
+
+            <span className="text-lg font-bold">
               ₹{order.totalAmount}
             </span>
           </div>
@@ -413,18 +434,22 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      {/* Admin Page (Screen Only) */}
-      <div className="min-h-screen bg-gray-100 p-8 print:hidden">
-        {/* Notification Messages */}
+      {/* MAIN PAGE */}
+      <div className="min-h-screen bg-gray-100 p-4 md:p-6 lg:p-8 print:hidden">
+        {/* Notification */}
         {updateMessage && (
           <div
-            className={`mb-6 p-4 rounded-lg ${updateMessage.type === "success" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-rose-50 text-rose-700 border border-rose-200"}`}
+            className={`mb-6 p-4 rounded-lg ${
+              updateMessage.type === "success"
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                : "bg-rose-50 text-rose-700 border border-rose-200"
+            }`}
           >
             <p className="font-medium">{updateMessage.text}</p>
           </div>
         )}
 
-        {/* Back Button */}
+        {/* Back */}
         <div className="mb-6">
           <button
             onClick={() => router.back()}
@@ -434,27 +459,33 @@ export default function OrderDetailPage() {
           </button>
         </div>
 
-        {/* Header */}
-        <div className="bg-white rounded shadow p-6 mb-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        {/* HEADER */}
+        <div className="bg-white rounded shadow p-4 md:p-6 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
                 Order Details
               </h1>
-              <code className="text-gray-600 font-mono bg-gray-100 px-3 py-1 rounded">
+
+              <code className="block w-full overflow-x-auto text-sm text-gray-600 font-mono bg-gray-100 px-3 py-2 rounded">
                 Order ID: {order._id}
               </code>
             </div>
-            <div className="flex flex-col gap-3 text-right">
+
+            <div className="flex flex-col gap-3 lg:text-right">
               <div>
-                <p className="text-sm text-gray-600 mb-2">Order Date</p>
-                <p className="text-lg font-semibold text-gray-900">
+                <p className="text-sm text-gray-600 mb-1">
+                  Order Date
+                </p>
+
+                <p className="text-base md:text-lg font-semibold text-gray-900">
                   {formatDate(order.createdAt)}
                 </p>
               </div>
+
               <button
                 onClick={handlePrint}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors"
+                className="w-full lg:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors"
               >
                 Print Receipt
               </button>
@@ -462,42 +493,55 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
+        {/* CUSTOMER + STATUS */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          {/* Customer Information */}
+          {/* CUSTOMER */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded shadow p-6">
+            <div className="bg-white rounded shadow p-4 md:p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
                 Customer Information
               </h2>
+
               <div className="space-y-4">
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">
                     Full Name
                   </p>
-                  <p className="text-lg text-gray-900">{order.userId.name}</p>
+
+                  <p className="text-base md:text-lg text-gray-900 break-words">
+                    {order.userId.name}
+                  </p>
                 </div>
+
                 <div>
                   <p className="text-sm font-medium text-gray-600 mb-1">
                     Phone Number
                   </p>
-                  <p className="text-lg text-gray-900">{order.userId.phone}</p>
+
+                  <p className="text-base md:text-lg text-gray-900">
+                    {order.userId.phone}
+                  </p>
                 </div>
+
                 {order.userId.email && (
                   <div>
                     <p className="text-sm font-medium text-gray-600 mb-1">
                       Email
                     </p>
-                    <p className="text-lg text-gray-900">
+
+                    <p className="text-base md:text-lg text-gray-900 break-all">
                       {order.userId.email}
                     </p>
                   </div>
                 )}
+
                 {order.shippingAddress && (
                   <div>
                     <p className="text-sm font-medium text-gray-600 mb-1">
                       Shipping Address
                     </p>
-                    <p className="text-lg text-gray-900">
+
+                    <p className="text-base md:text-lg text-gray-900 break-words">
                       {order.shippingAddress}
                     </p>
                   </div>
@@ -506,31 +550,36 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
-          {/* Order Status */}
+          {/* STATUS */}
           <div className="space-y-4">
-            <div className="bg-white rounded shadow p-6">
+            <div className="bg-white rounded shadow p-4 md:p-6">
               <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-4">
                 Payment Status
               </h3>
+
               <span
                 className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold ${getPaymentStatusColor(
                   order.paymentStatus,
                 )}`}
               >
                 <span className="w-2 h-2 rounded-full mr-2 bg-current opacity-70"></span>
+
                 {order.paymentStatus.charAt(0).toUpperCase() +
                   order.paymentStatus.slice(1)}
               </span>
             </div>
 
-            <div className="bg-white rounded shadow p-6">
+            <div className="bg-white rounded shadow p-4 md:p-6">
               <h3 className="text-sm font-semibold text-gray-600 uppercase tracking-wider mb-4">
                 Order Status
               </h3>
+
               <div className="space-y-2">
                 <select
                   value={updatedOrderStatus || order.orderStatus}
-                  onChange={(e) => setUpdatedOrderStatus(e.target.value)}
+                  onChange={(e) =>
+                    setUpdatedOrderStatus(e.target.value)
+                  }
                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="pending">Pending</option>
@@ -539,6 +588,7 @@ export default function OrderDetailPage() {
                   <option value="delivered">Delivered</option>
                   <option value="cancelled">Cancelled</option>
                 </select>
+
                 {updatedOrderStatus &&
                   updatedOrderStatus !== order.orderStatus && (
                     <button
@@ -546,17 +596,21 @@ export default function OrderDetailPage() {
                       disabled={updating}
                       className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 rounded transition-colors"
                     >
-                      {updating ? "Updating..." : "Update Status"}
+                      {updating
+                        ? "Updating..."
+                        : "Update Status"}
                     </button>
                   )}
               </div>
+
               {updatedOrderStatus === order.orderStatus && (
                 <span
-                  className={`inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold ${getOrderStatusColor(
+                  className={`inline-flex items-center mt-4 px-4 py-2 rounded-lg text-sm font-semibold ${getOrderStatusColor(
                     order.orderStatus,
                   )}`}
                 >
                   <span className="w-2 h-2 rounded-full mr-2 bg-current opacity-70"></span>
+
                   {order.orderStatus.charAt(0).toUpperCase() +
                     order.orderStatus.slice(1)}
                 </span>
@@ -565,10 +619,12 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
-        {/* Order Items */}
+        {/* ORDER ITEMS */}
         <div className="bg-white rounded shadow overflow-hidden">
-          <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Order Items</h2>
+          <div className="px-4 md:px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Order Items
+            </h2>
           </div>
 
           <div className="divide-y divide-gray-200">
@@ -579,73 +635,97 @@ export default function OrderDetailPage() {
               return (
                 <div
                   key={idx}
-                  className="p-6 hover:bg-gray-50 transition-colors"
+                  className="p-4 md:p-6 hover:bg-gray-50 transition-colors"
                 >
-                  <div className="flex gap-6">
-                    {/* Product Image */}
-                    <div className="flex-shrink-0">
+                  <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+                    {/* IMAGE */}
+                    <div className="flex justify-center md:block">
                       <img
                         src={item.productId.thumbnail}
                         alt={item.productId.productName}
-                        className="w-24 h-24 object-cover rounded-lg bg-gray-100"
+                        className="w-24 object-cover rounded-lg bg-gray-100"
                       />
                     </div>
 
-                    {/* Product Details */}
-                    <div className="flex-grow">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    {/* DETAILS */}
+                    <div className="flex-grow min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3 break-words">
                         {item.productId.productName}
                       </h3>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+
+                      <div className="grid grid-cols-2 gap-4 text-sm">
                         {colorSize && (
                           <>
                             <div>
-                              <p className="text-gray-600 font-medium">Color</p>
+                              <p className="text-gray-600 font-medium">
+                                Color
+                              </p>
+
                               <div className="flex items-center gap-2 mt-1">
                                 <div
-                                  className="w-5 h-5 rounded border border-gray-300"
+                                  className="w-5 h-5 rounded border border-gray-300 flex-shrink-0"
                                   style={{
-                                    backgroundColor: colorSize.colorCode,
+                                    backgroundColor:
+                                      colorSize.colorCode,
                                   }}
-                                  title={colorSize.colorName}
-                                ></div>
-                                <span className="text-gray-900">
+                                />
+
+                                <span className="text-gray-900 break-words">
                                   {colorSize.colorName}
                                 </span>
                               </div>
                             </div>
+
                             <div>
-                              <p className="text-gray-600 font-medium">Size</p>
+                              <p className="text-gray-600 font-medium">
+                                Size
+                              </p>
+
                               <p className="text-gray-900 mt-1">
                                 {colorSize.sizeName}
                               </p>
                             </div>
                           </>
                         )}
-                        <div>
-                          <p className="text-gray-600 font-medium">SKU</p>
-                          <code className="text-gray-900 mt-1 bg-gray-100 px-2 py-1 rounded text-xs">
+
+                        <div className="col-span-2 md:col-span-1">
+                          <p className="text-gray-600 font-medium">
+                            SKU
+                          </p>
+
+                          <code className="inline-block mt-1 text-gray-900 bg-gray-100 px-2 py-1 rounded text-xs break-all">
                             {item.sku}
                           </code>
                         </div>
+
                         <div>
-                          <p className="text-gray-600 font-medium">Quantity</p>
-                          <p className="text-gray-900 mt-1">{item.quantity}</p>
+                          <p className="text-gray-600 font-medium">
+                            Quantity
+                          </p>
+
+                          <p className="text-gray-900 mt-1">
+                            {item.quantity}
+                          </p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Price */}
-                    <div className="flex-shrink-0 text-right">
+                    {/* PRICE */}
+                    <div className="md:text-right border-t md:border-0 pt-4 md:pt-0">
                       {colorSize && (
                         <>
                           <p className="text-sm text-gray-600 mb-1">
                             Unit Price
                           </p>
+
                           <p className="text-xl font-semibold text-gray-900 mb-3">
                             ₹{colorSize.sellingPrice}
                           </p>
-                          <p className="text-sm text-gray-600 mb-1">Total</p>
+
+                          <p className="text-sm text-gray-600 mb-1">
+                            Total
+                          </p>
+
                           <p className="text-2xl font-bold text-blue-600">
                             ₹{itemTotal}
                           </p>
@@ -658,13 +738,14 @@ export default function OrderDetailPage() {
             })}
           </div>
 
-          {/* Grand Total */}
-          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-t border-gray-200">
-            <div className="flex justify-end items-center gap-4">
+          {/* GRAND TOTAL */}
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 md:px-6 py-4 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row justify-between sm:justify-end items-start sm:items-center gap-2 sm:gap-4">
               <span className="text-lg font-semibold text-gray-900">
                 Grand Total:
               </span>
-              <span className="text-3xl font-bold text-blue-600">
+
+              <span className="text-2xl md:text-3xl font-bold text-blue-600">
                 ₹{order.totalAmount}
               </span>
             </div>

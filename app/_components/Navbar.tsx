@@ -88,7 +88,7 @@ export default function Navbar() {
             onClick={() => setSidebarOpen(false)}
           />
 
-          <div className="relative bg-white w-64 h-screen">
+          <div className="relative bg-white w-69 h-screen">
             <button
               onClick={() => setSidebarOpen(false)}
               className="absolute top-2 right-2 text-gray-700 z-20"
