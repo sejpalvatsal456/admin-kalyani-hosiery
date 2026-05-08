@@ -15,8 +15,7 @@ import { Button, Box, Typography, Chip } from "@mui/material";
 import { Edit, Delete, Add } from "@mui/icons-material";
 import dynamic from "next/dynamic";
 
-
-const MRTNoSSR = dynamic<MaterialReactTableProps<any>> (
+const MRTNoSSR = dynamic(
   () =>
     import("material-react-table").then((mod) => mod.MaterialReactTable),
   { ssr: false }
@@ -256,8 +255,8 @@ export default function ProductPage() {
     columns,
     data,
     enableRowSelection: false,
-    enableColumnFilters: false,
-    enableGlobalFilter: false,
+    enableColumnFilters: true,
+    enableGlobalFilter: true,
     enablePagination: true,
     enableSorting: true,
     manualFiltering: true,
@@ -298,7 +297,7 @@ export default function ProductPage() {
       {isLoading ? (
         <Typography>Loading...</Typography>
       ) : (
-        <MRTNoSSR table={table} />
+        <MaterialReactTable table={table} />
       )}
 
       {/* Floating Add Button */}

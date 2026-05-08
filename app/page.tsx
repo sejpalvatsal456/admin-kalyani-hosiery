@@ -31,10 +31,10 @@ export default function Home() {
   }, [])
 
   const stats = [
-    { label: 'Total Sales', value: `₹${totalSales.toLocaleString()}`, themeColor: "#01d765" },
-    { label: 'Total Products', value: totalProducts.toString(), themeColor: "#0189d7" },
-    { label: 'Total Brands', value: totalBrands.toString(), themeColor: "#d8e700" },
-    { label: 'Total Orders', value: totalOrders.toString(), themeColor: "#00ffc8" },
+    { label: 'Total Sales', value: `₹${totalSales.toLocaleString()}`, themeColor: "#01d765", target: '/orders' },
+    { label: 'Total Products', value: totalProducts.toString(), themeColor: "#0189d7", target: '/products' },
+    { label: 'Total Brands', value: totalBrands.toString(), themeColor: "#d8e700", target: '/brands' },
+    { label: 'Total Orders', value: totalOrders.toString(), themeColor: "#00ffc8", target: '/orders' },
   ];
 
   return (
@@ -43,7 +43,7 @@ export default function Home() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat) => (
-          <StatsCard key={stat.label} label={stat.label} value={stat.value} themeColor={stat.themeColor} />
+          <StatsCard key={stat.label} label={stat.label} value={stat.value} themeColor={stat.themeColor} target={stat.target} />
         ))}
       </div>
 
