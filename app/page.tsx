@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import StatsCard from "./_components/ui/StatsCard";
 import OrderOverview from "./_components/OrderOverview";
 import OrderStatus from "./_components/OrderStatus";
+import LatestOrders from "./_components/LatestOrders";
 export default function Home() {
   // let totalSales = 0;
   // let totalProducts = 0;
@@ -50,6 +51,9 @@ export default function Home() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <OrderOverview />
         <OrderStatus />
+      </div>
+      <div className="my-8">
+        <LatestOrders />
       </div>
       
     </main>

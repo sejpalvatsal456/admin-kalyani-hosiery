@@ -10,7 +10,7 @@ export default function Navbar() {
     { label: "Brand", href: "/brand" },
     { label: "Category", href: "/category" },
     { label: "Subcategory", href: "/subcategory" },
-    { label: "Product", href: "/product" },
+    { label: "Product", href: "/products" },
     { label: "Orders", href: "/orders" },
     { label: "Reels", href: "/reels" },
     { label: "Banners", href: "/banners" },

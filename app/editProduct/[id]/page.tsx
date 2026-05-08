@@ -193,7 +193,7 @@ export default function EditProductPage() {
       body: JSON.stringify(form),
     });
 
-    router.push("/product");
+    router.push("/products");
   };
 
   if (loading) {
@@ -441,7 +441,7 @@ export default function EditProductPage() {
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => router.push("/product")}
+                onClick={() => router.push("/products")}
                 className="rounded-full border border-slate-300 px-6 py-3 text-slate-700 hover:bg-slate-100"
               >
                 ← Back
