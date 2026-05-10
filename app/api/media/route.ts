@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
       params: {
         Bucket: process.env.AWS_BUCKET_NAME!,
         Key: key,
-        Body: file.stream(),
+        Body: Buffer.from(await file.arrayBuffer()),
         ContentType: fileType,
       },
     });
