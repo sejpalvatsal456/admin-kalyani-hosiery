@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import OrderReceipt from "@/app/components/OrderReceipt";
 
 import {
   MaterialReactTable,
@@ -16,6 +17,7 @@ import {
   Tooltip,
   CircularProgress,
   Alert,
+  Button,
 } from "@mui/material";
 
 interface CartItem {
@@ -29,6 +31,31 @@ interface CartItem {
   quantity: number;
 }
 
+interface Variety {
+  sku: string;
+  colorName: string;
+  colorCode: string;
+  sizeName: string;
+  mrp: number;
+  sellingPrice: number;
+  discountPercent: number;
+  imgLinks: string[];
+  stock: number;
+}
+
+interface Product {
+  _id: string;
+  productName: string;
+  thumbnail: string;
+  varients: Variety[];
+}
+
+interface OrderItem {
+  productId: Product;
+  sku: string;
+  quantity: number;
+}
+
 interface Order {
   _id: string;
   userId: {
@@ -36,18 +63,15 @@ interface Order {
     name: string;
     phone: string;
     email: string;
+    address?: string;
   };
-  items: CartItem[];
+  items: OrderItem[];
   shippingAddress?: string;
   paymentStatus: "pending" | "paid" | "failed" | "refunded";
-  orderStatus:
-    | "pending"
-    | "placed"
-    | "processing"
-    | "delivered"
-    | "cancelled";
+  orderStatus: "pending" | "placed" | "processing" | "delivered" | "cancelled";
   createdAt: string;
   updatedAt: string;
+  totalAmount: number;
 }
 
 export default function OrdersPage() {
@@ -75,13 +99,15 @@ export default function OrdersPage() {
 
       setOrders(data.orders || []);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An error occurred"
-      );
+      setError(err instanceof Error ? err.message : "An error occurred");
       console.error(err);
     } finally {
       setLoading(false);
     }
+  }
+
+  function handlePrintAll() {
+    window.print();
   }
 
   function formatDate(dateString: string) {
@@ -155,18 +181,12 @@ export default function OrdersPage() {
         size: 180,
         Cell: ({ row }) => (
           <Box>
-            <Typography
-              variant="body2"
-              sx={{ fontWeight: 600 }}
-            >
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
               {row.original.userId.name}
             </Typography>
 
             {row.original.userId.email && (
-              <Typography
-                variant="caption"
-                color="text.secondary"
-              >
+              <Typography variant="caption" color="text.secondary">
                 {row.original.userId.email}
               </Typography>
             )}
@@ -189,13 +209,8 @@ export default function OrdersPage() {
             title={
               <Box>
                 {row.original.items.map((item, idx) => (
-                  <Typography
-                    key={idx}
-                    variant="caption"
-                    display="block"
-                  >
-                    {item.productId.productName} ({item.sku}) ×{" "}
-                    {item.quantity}
+                  <Typography key={idx} variant="caption" display="block">
+                    {item.productId.productName} ({item.sku}) × {item.quantity}
                   </Typography>
                 ))}
               </Box>
@@ -249,20 +264,13 @@ export default function OrdersPage() {
         header: "Created",
         size: 180,
         Cell: ({ cell }) => {
-          const formatted = formatDate(
-            cell.getValue<string>()
-          ).split(",");
+          const formatted = formatDate(cell.getValue<string>()).split(",");
 
           return (
-            <Box>
-              <Typography variant="body2">
-                {formatted[0]}
-              </Typography>
+            <Box suppressHydrationWarning>
+              <Typography variant="body2" suppressHydrationWarning>{formatted[0]}</Typography>
 
-              <Typography
-                variant="caption"
-                color="text.secondary"
-              >
+              <Typography variant="caption" color="text.secondary" suppressHydrationWarning>
                 {formatted[1]}
               </Typography>
             </Box>
@@ -270,7 +278,7 @@ export default function OrdersPage() {
         },
       },
     ],
-    []
+    [],
   );
 
   const table = useMaterialReactTable({
@@ -284,8 +292,7 @@ export default function OrdersPage() {
     enableSorting: true,
 
     muiTableBodyRowProps: ({ row }) => ({
-      onClick: () =>
-        router.push(`/order-detail/${row.original._id}`),
+      onClick: () => router.push(`/order-detail/${row.original._id}`),
       sx: {
         cursor: "pointer",
       },
@@ -336,32 +343,84 @@ export default function OrdersPage() {
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        bgcolor: "#f5f5f5",
-        p: 3,
-      }}
-    >
-      <Typography
-        variant="h4"
+    <>
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+
+          #all-orders-print,
+          #all-orders-print * {
+            visibility: visible;
+          }
+
+          #all-orders-print {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
+
+          .print-page-break {
+            page-break-after: always;
+            break-after: page;
+          }
+
+          @page {
+            size: A5 portrait;
+            margin: 0;
+          }
+        }
+      `}</style>
+
+      {/* PRINT ALL ORDERS */}
+      <div id="all-orders-print" className="hidden print:block bg-white">
+        {orders.map((order) => (
+          <div key={order._id} className="print-page-break p-4">
+            <OrderReceipt order={order} />
+          </div>
+        ))}
+      </div>
+
+      {/* MAIN PAGE */}
+      <Box
         sx={{
-          mb: 1,
-          fontWeight: "bold",
+          minHeight: "100vh",
+          bgcolor: "#f5f5f5",
+          p: 3,
         }}
       >
-        Orders
-      </Typography>
+        <div className="flex flex-row justify-between items-center">
+          <div className="flex flex-col">
+            <Typography
+              variant="h4"
+              sx={{
+                mb: 1,
+                fontWeight: "bold",
+              }}
+            >
+              Orders
+            </Typography>
 
-      <Typography
-        variant="body1"
-        color="text.secondary"
-        sx={{ mb: 3 }}
-      >
-        Manage and track all customer orders
-      </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              Manage and track all customer orders
+            </Typography>
+          </div>
 
-      <MaterialReactTable table={table} />
-    </Box>
+          <div className="flex flex-col">
+            <Button 
+              className="self-end" 
+              variant="contained"
+              onClick={handlePrintAll}
+            >
+              Print All
+            </Button>
+          </div>
+        </div>
+
+        <MaterialReactTable table={table} />
+      </Box>
+    </>
   );
 }

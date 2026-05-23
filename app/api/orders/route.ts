@@ -10,8 +10,13 @@ export async function GET(req: NextRequest) {
     // Get all orders with user details populated
     const orders = await Order.find()
       .populate("userId", "name phone email")
-      .populate("items.productId", "productName")
+      .populate(
+        "items.productId",
+        "productName thumbnail varients"
+      )
       .sort({ createdAt: -1 });
+
+    console.log(orders)
 
     return NextResponse.json({ orders }, { status: 200 });
   } catch (error: any) {
