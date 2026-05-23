@@ -23,6 +23,9 @@ interface Product {
   varients: Variety[];
 }
 
+const calculateDiscount = (mrp: number, sellingPrice: number) =>
+  mrp > 0 ? Math.round(((mrp - sellingPrice) / mrp) * 100) : 0;
+
 export default function EditVarientPage() {
   const { productId } = useParams();
   const router = useRouter();
@@ -30,6 +33,13 @@ export default function EditVarientPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [varients, setVarients] = useState<Variety[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [lockPrice, setLockPrice] = useState(false);
+  const [fixedPrice, setFixedPrice] = useState({
+    mrp: 0,
+    sellingPrice: 0,
+  });
+  const [fixedPriceInitialized, setFixedPriceInitialized] = useState(false);
 
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [editingImage, setEditingImage] = useState<{
@@ -65,9 +75,12 @@ export default function EditVarientPage() {
         colorName: "",
         colorCode: "#000000",
         sizeName: "",
-        mrp: 0,
-        sellingPrice: 0,
-        discountPercent: 0,
+        mrp: lockPrice ? fixedPrice.mrp : 0,
+        sellingPrice: lockPrice ? fixedPrice.sellingPrice : 0,
+        discountPercent: calculateDiscount(
+          lockPrice ? fixedPrice.mrp : 0,
+          lockPrice ? fixedPrice.sellingPrice : 0,
+        ),
         imgLinks: [""],
         stock: 0,
       },
@@ -75,20 +88,66 @@ export default function EditVarientPage() {
   };
 
   const updateVarient = (idx: number, changes: Partial<Variety>) => {
-    setVarients((v) => {
-      const copy = [...v];
+    setVarients((current) => {
+      const copy = [...current];
       const updated = { ...copy[idx], ...changes };
-
-      // 🔥 Auto discount
-      if (updated.mrp > 0 && updated.sellingPrice > 0) {
-        updated.discountPercent = Math.round(
-          ((updated.mrp - updated.sellingPrice) / updated.mrp) * 100,
-        );
-      }
-
+      updated.discountPercent = calculateDiscount(
+        updated.mrp,
+        updated.sellingPrice,
+      );
       copy[idx] = updated;
       return copy;
     });
+  };
+
+  const applyFixedPriceToVariants = (price: {
+    mrp: number;
+    sellingPrice: number;
+  }) => {
+    setVarients((current) =>
+      current.map((variant) => ({
+        ...variant,
+        mrp: price.mrp,
+        sellingPrice: price.sellingPrice,
+        discountPercent: calculateDiscount(price.mrp, price.sellingPrice),
+      })),
+    );
+  };
+
+  const handleLockPriceToggle = () => {
+    if (!lockPrice) {
+      const nextFixedPrice =
+        !fixedPriceInitialized && varients.length > 0
+          ? {
+              mrp: varients[0].mrp,
+              sellingPrice: varients[0].sellingPrice,
+            }
+          : fixedPrice;
+
+      if (!fixedPriceInitialized && varients.length > 0) {
+        setFixedPrice(nextFixedPrice);
+        setFixedPriceInitialized(true);
+      }
+
+      applyFixedPriceToVariants(nextFixedPrice);
+      setFixedPrice(nextFixedPrice);
+      setLockPrice(true);
+      return;
+    }
+
+    setLockPrice(false);
+  };
+
+  const handleFixedPriceChange = (
+    field: "mrp" | "sellingPrice",
+    value: number,
+  ) => {
+    const nextFixedPrice = { ...fixedPrice, [field]: value };
+    setFixedPrice(nextFixedPrice);
+
+    if (lockPrice) {
+      applyFixedPriceToVariants(nextFixedPrice);
+    }
   };
 
   const removeVarient = (idx: number) => {
@@ -153,8 +212,8 @@ export default function EditVarientPage() {
       }
 
       // alert("Saved!");
-      toast.success("Saved!")
-      router.push("/product");
+      toast.success("Saved!");
+      router.push("/products");
     } catch (err) {
       console.error(err);
     }
@@ -176,6 +235,65 @@ export default function EditVarientPage() {
 
         {/* Form Content */}
         <div className="space-y-6 px-6 py-8">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">
+              Fixed Price
+            </h3>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-[auto_1fr_1fr] items-end">
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={lockPrice}
+                onChange={handleLockPriceToggle}
+                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="text-sm font-semibold text-slate-700">
+                Lock Price
+              </span>
+            </label>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-slate-700">
+                Fixed MRP
+              </label>
+              <input
+                type="number"
+                placeholder="Fixed MRP"
+                value={fixedPrice.mrp}
+                onChange={(e) =>
+                  handleFixedPriceChange("mrp", Number(e.target.value))
+                }
+                disabled={!lockPrice}
+                className={`input ${
+                  !lockPrice ? "bg-slate-100 text-slate-500 cursor-not-allowed" : ""
+                }`}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-slate-700">
+                Fixed Selling Price
+              </label>
+              <input
+                type="number"
+                placeholder="Fixed Selling Price"
+                value={fixedPrice.sellingPrice}
+                onChange={(e) =>
+                  handleFixedPriceChange(
+                    "sellingPrice",
+                    Number(e.target.value),
+                  )
+                }
+                disabled={!lockPrice}
+                className={`input ${
+                  !lockPrice ? "bg-slate-100 text-slate-500 cursor-not-allowed" : ""
+                }`}
+              />
+            </div>
+          </div>
+
           <div className="space-y-4">
             {varients.map((v, i) => (
               <div
@@ -256,7 +374,10 @@ export default function EditVarientPage() {
                         onChange={(e) =>
                           updateVarient(i, { mrp: Number(e.target.value) })
                         }
-                        className="input"
+                        disabled={lockPrice}
+                        className={`input ${
+                          lockPrice ? "bg-slate-100 text-slate-500 cursor-not-allowed" : ""
+                        }`}
                       />
                     </div>
 
@@ -273,7 +394,10 @@ export default function EditVarientPage() {
                             sellingPrice: Number(e.target.value),
                           })
                         }
-                        className="input"
+                        disabled={lockPrice}
+                        className={`input ${
+                          lockPrice ? "bg-slate-100 text-slate-500 cursor-not-allowed" : ""
+                        }`}
                       />
                     </div>
 
