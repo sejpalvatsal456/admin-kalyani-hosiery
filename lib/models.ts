@@ -205,6 +205,25 @@ const ProductSchema = new Schema(
   { timestamps: true },
 );
 
+const SaleProductSchema = new Schema(
+  {
+    productName: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
+    categoryId: { type: Types.ObjectId, ref: "Category", required: true },
+    subcategoryId: { type: Types.ObjectId, ref: "Subcategory", required: true },
+    brandId: { type: Types.ObjectId, ref: "Brand", required: true },
+    thumbnail: { type: String, required: true },
+    tags: { type: [String], default: [] },
+    varients: { type: [VarietySchema], default: [] },
+    desc: {
+      type: [DescriptionSchema],
+      default: [],
+    },
+    loc: { type: String, required: true },
+  },
+  { timestamps: true },
+);
+
 // Transaction Model
 const TransactionSchema = new Schema(
   {
@@ -325,7 +344,7 @@ const MediaSchema = new Schema(
       default: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const Brand = models.Brand || model("Brand", BrandSchema);
@@ -334,6 +353,7 @@ export const Subcategory =
   models.Subcategory || model("Subcategory", SubcategorySchema);
 export const User = models.User || model("User", UserSchema);
 export const Product = models.Product || model("Product", ProductSchema);
+export const SaleProduct = models.SaleProduct || model("SaleProduct", SaleProductSchema);
 export const Transaction =
   models.Transaction || model("Transaction", TransactionSchema);
 export const Order = models.Order || model("Order", OrderSchema);
