@@ -70,18 +70,20 @@ export default function MediaPage() {
   ) => {
     e.preventDefault();
 
-    const formData = new FormData(e.currentTarget);
+    const input = e.currentTarget.elements.namedItem(
+      "file"
+    ) as HTMLInputElement | null;
+    const files = input?.files;
 
-    const file = formData.get("file") as File;
-
-    if (!file) return;
+    if (!files || files.length === 0) return;
 
     setUploading(true);
 
     try {
       const uploadFormData = new FormData();
-
-      uploadFormData.append("file", file);
+      Array.from(files).forEach((file) => {
+        uploadFormData.append("file", file);
+      });
 
       /**
        * Default upload = media category
@@ -94,7 +96,11 @@ export default function MediaPage() {
       if (res.ok) {
         const newMedia = await res.json();
 
-        setMedia((prev) => [newMedia, ...prev]);
+        setMedia((prev) =>
+          Array.isArray(newMedia)
+            ? [...newMedia, ...prev]
+            : [newMedia, ...prev],
+        );
 
         (e.target as HTMLFormElement).reset();
       } else {
@@ -193,6 +199,7 @@ export default function MediaPage() {
                   type="file"
                   name="file"
                   accept="image/*,video/*"
+                  multiple
                   required
                   className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                 />

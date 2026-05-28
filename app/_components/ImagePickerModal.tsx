@@ -60,13 +60,15 @@ export default function ImagePickerModal({
   };
 
   // 🔥 Upload handler
-  const handleUpload = async (file: File) => {
+  const handleUpload = async (files: FileList | File[]) => {
     try {
       setUploading(true);
       setError(null);
 
       const formData = new FormData();
-      formData.append("file", file);
+      Array.from(files).forEach((file) => {
+        formData.append("file", file);
+      });
 
       const res = await fetch("/api/media", {
         method: "POST",
@@ -79,8 +81,10 @@ export default function ImagePickerModal({
         throw new Error(data.msg || "Upload failed");
       }
 
-      // ✅ Auto select uploaded image
-      setSelectedUrl(data.url);
+      const uploadedItems = Array.isArray(data) ? data : [data];
+      if (uploadedItems.length > 0) {
+        setSelectedUrl(uploadedItems[uploadedItems.length - 1].url);
+      }
 
       // 🔄 Refresh media list
       await fetchMedia();
@@ -119,10 +123,11 @@ export default function ImagePickerModal({
             <input
               type="file"
               accept="image/*"
+              multiple
               hidden
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) handleUpload(file);
+                const files = e.target.files;
+                if (files?.length) handleUpload(files);
               }}
             />
           </label>

@@ -117,9 +117,11 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
 
-    const file = formData.get("file") as File;
+    const files = formData
+      .getAll("file")
+      .filter((item): item is File => item instanceof File);
 
-    if (!file) {
+    if (files.length === 0) {
       return NextResponse.json(
         {
           error: "No file provided",
@@ -146,9 +148,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const fileName = file.name;
-    const fileSize = file.size;
-    const fileType = file.type;
+    const savedMedia: any[] = [];
+
+    for (const file of files) {
+      const fileName = file.name;
+      const fileSize = file.size;
+      const fileType = file.type;
 
     /**
      * ─────────────────────────────
@@ -275,10 +280,15 @@ export async function POST(request: NextRequest) {
     });
 
     await media.save();
+    savedMedia.push(media);
+  }
 
-    return NextResponse.json(media, {
+  return NextResponse.json(
+    savedMedia.length === 1 ? savedMedia[0] : savedMedia,
+    {
       status: 201,
-    });
+    }
+  );
   } catch (error) {
     console.error("Error uploading media:", error);
 
