@@ -11,7 +11,7 @@ import {
   useMaterialReactTable,
 } from "material-react-table";
 import { Button, Box, Typography } from "@mui/material";
-import { Delete, Add } from "@mui/icons-material";
+import { Edit, Delete, Add } from "@mui/icons-material";
 
 interface SaleProductApiResponse {
   data: Array<SaleProduct>;
@@ -200,6 +200,21 @@ export default function SaleProductsPage() {
         Cell: ({ row }) => (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, justifyContent: 'center' }}>
             <Button
+              component={Link}
+              href={`/editSaleProduct/${row.original._id}`}
+              variant="contained"
+              size="small"
+              startIcon={<Edit />}
+              sx={{
+                bgcolor: '#1976d2',
+                '&:hover': { bgcolor: '#1565c0' },
+                fontSize: '0.75rem',
+                px: 2,
+              }}
+            >
+              Edit
+            </Button>
+            <Button
               onClick={() => handleDelete(row.original._id)}
               variant="contained"
               size="small"
@@ -267,7 +282,7 @@ export default function SaleProductsPage() {
 
       <Button
         component={Link}
-        href="/addProduct"
+          href="/addSaleProduct"
         variant="contained"
         sx={{
           position: "fixed",
