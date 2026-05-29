@@ -12,6 +12,8 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr("");
+    setLoading(true);
+
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -27,6 +29,8 @@ export default function LoginPage() {
       }
     } catch (err) {
       setErr("Server error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -76,9 +80,16 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading ? "Logging in..." : "Login"}
+              {loading ? (
+                <>
+                  <span className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Logging in</span>
+                </>
+              ) : (
+                "Login"
+              )}
             </button>
           </form>
         </div>
