@@ -127,7 +127,6 @@ export default function ReelsPage() {
         {/* Header */}
         <div className="border-b border-slate-200 px-6 py-8 sm:px-10">
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🎬</span>
 
             <div>
               <h1 className="text-3xl font-semibold tracking-tight text-slate-900">

@@ -294,11 +294,7 @@ export default function ProductPage() {
         Products
       </Typography>
 
-      {isLoading ? (
-        <Typography>Loading...</Typography>
-      ) : (
-        <MaterialReactTable table={table} />
-      )}
+      <MaterialReactTable table={table} />
 
       {/* Floating Add Button */}
       <Button
