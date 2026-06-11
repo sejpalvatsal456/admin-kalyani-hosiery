@@ -133,7 +133,7 @@ const AdminSchema = new Schema<IAdmin>(
       {
         type: String,
       },
-    ],
+    ], // like ['read', 'write', 'delete'] for superadmin
 
     lastLogin: {
       type: Date,

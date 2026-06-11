@@ -1,5 +1,6 @@
 import { connectDB } from "@/lib/connectDB";
 import { Category, Subcategory, Product } from "@/lib/models";
+import { slugToText, textToSlug } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
 
 // fetch all categories
@@ -21,11 +22,18 @@ export const GET = async (req: NextRequest) => {
 export const POST = async (req: NextRequest) => {
   try {
     await connectDB();
-    const { name, order } = (await req.json()) as { name: string; order: number };
+    const { name, order, theme } = (await req.json()) as { name: string; order: number; theme: string };
 
-    if (!name || name.trim() === "") {
+    if (!name || name.trim() === "" ) {
       return NextResponse.json(
         { msg: "name should be non empty string" },
+        { status: 500 }
+      );
+    }
+
+    if (!theme || theme.trim() === "" ) {
+      return NextResponse.json(
+        { msg: "theme should be non empty string" },
         { status: 500 }
       );
     }
@@ -45,7 +53,7 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    const cat = await Category.create({ name: name.trim(), order });
+    const cat = await Category.create({ name: name.trim(), order, slug: slugToText(name), theme: theme.trim() });
     return NextResponse.json({ category: cat }, { status: 200 });
   } catch (error) {
     console.log(error);
@@ -60,10 +68,17 @@ export const POST = async (req: NextRequest) => {
 export const PATCH = async (req: NextRequest) => {
   try {
     await connectDB();
-    const { id, name, order } = (await req.json()) as { id: string; name: string; order?: number };
+    const { id, name, order, theme } = (await req.json()) as { id: string; name: string; order?: number; theme?: string };
     if (!id || !name || name.trim() === "") {
       return NextResponse.json(
         { msg: "id and name must be provided" },
+        { status: 500 }
+      );
+    }
+
+    if (!theme || theme.trim() === "") {
+      return NextResponse.json(
+        { msg: "theme must be provided" },
         { status: 500 }
       );
     }
@@ -91,8 +106,12 @@ export const PATCH = async (req: NextRequest) => {
     }
 
     cat.name = name.trim();
+    cat.slug = textToSlug(name.trim())
     if (order !== undefined) {
       cat.order = order;
+    }
+    if (theme !== undefined) {
+      cat.theme = theme.trim()
     }
     await cat.save();
     return NextResponse.json({ category: cat }, { status: 200 });

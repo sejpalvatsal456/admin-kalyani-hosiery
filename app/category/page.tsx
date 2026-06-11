@@ -1,16 +1,20 @@
 "use client";
 
+import { textToSlug } from "@/lib/utils";
 import React, { useState, useEffect } from "react";
 
 type Category = {
   id: string;
   name: string;
   order: number;
+  slug: string;
+  theme: string;
 };
 
 export default function CategoryPage() {
   const [name, setName] = useState("");
   const [order, setOrder] = useState("");
+  const [theme, setTheme] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -22,12 +26,12 @@ export default function CategoryPage() {
       const res = await fetch('/api/category', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: editingId, name: name.trim(), order: parseInt(order) }),
+        body: JSON.stringify({ id: editingId, name: name.trim(), order: parseInt(order), theme: theme.trim() }),
       });
       const data = await res.json();
       if (res.ok) {
         setCategories((prev) =>
-          prev.map((c) => (c.id === editingId ? { ...c, name: name.trim(), order: parseInt(order) } : c)).sort((a, b) => a.order - b.order)
+          prev.map((c) => (c.id === editingId ? { ...c, name: name.trim(), order: parseInt(order), theme: theme.trim(), slug: textToSlug(name.trim()) } : c)).sort((a, b) => a.order - b.order)
         );
       } else {
         alert('Failed to update category');
@@ -35,16 +39,17 @@ export default function CategoryPage() {
       }
       setEditingId(null);
     } else {
+      // Adding new category
       const res = await fetch('/api/category', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), order: parseInt(order) }),
+        body: JSON.stringify({ name: name.trim(), order: parseInt(order), theme: theme.trim() }),
       });
       const data = await res.json();
       if (res.ok) {
         setCategories((prev) =>
           [
-            { id: data.category._id, name: data.category.name, order: data.category.order },
+            { id: data.category._id, name: data.category.name, order: data.category.order, theme: data.category.theme, slug: data.category.slug },
             ...prev,
           ].sort((a, b) => a.order - b.order)
         );
@@ -55,6 +60,7 @@ export default function CategoryPage() {
     }
     setName("");
     setOrder("");
+    setTheme("");
   }
 
   // load categories from backend
@@ -65,7 +71,7 @@ export default function CategoryPage() {
         const data = await res.json();
         if (res.ok) {
           setCategories(
-            data.categories.map((c: any) => ({ id: c._id, name: c.name, order: c.order }))
+            data.categories.map((c: any) => ({ id: c._id, name: c.name, order: c.order, theme: c.theme, slug: c.slug }))
           );
         } else {
           console.error('Failed to fetch categories', data.msg);
@@ -92,6 +98,16 @@ export default function CategoryPage() {
                 onChange={(e) => setName(e.target.value)}
                 className="mt-1 block w-full border-gray-300 rounded p-2"
                 placeholder="Category name"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Theme</label>
+              <input
+                type="color"
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                className="mt-1 h-10 block w-full border-gray-300 rounded p-2"
                 required
               />
             </div>
@@ -134,6 +150,12 @@ export default function CategoryPage() {
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
+                      Theme
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Name
                     </th>
                     <th
@@ -151,6 +173,12 @@ export default function CategoryPage() {
                         {c.order}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <div 
+                          className="w-7 h-7 rounded-full"
+                          style={{ backgroundImage: `radial-gradient(circle, ${c.theme.trim()}ff 0%, ${c.theme.trim()}00 100%)` }}
+                        ></div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {c.name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -159,6 +187,7 @@ export default function CategoryPage() {
                             setEditingId(c.id);
                             setName(c.name);
                             setOrder(c.order.toString());
+                            setTheme(c.theme);
                           }}
                           className="text-blue-600 hover:underline mr-2"
                         >
